@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2a" />
+  <link rel="stylesheet" href="style.css?v=m2b" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -76,24 +76,24 @@
         </div>
       </div>
 
-      <!-- STEP 1 — REVIEW (Forms A and B; 2 tries each, then Teacher PIN) · STEP 2 — THE MODULE 2 TEST (Form T; Teacher-PIN retake = Form U) -->
+      <!-- STEP 1 — REVIEW A (hints) + REVIEW B (no hints), two times each · STEP 2 — TEST A (official, once); TEST B = Teacher-PIN retake -->
       <div id="form-select-section" class="hidden">
 
-        <!-- Review — two forms, 2 tries each, then Teacher PIN -->
+        <!-- Review — two copies: A has hints, B does not; each can be taken two times -->
         <div class="step-card" id="review-card">
           <span class="step-label">Step 1 — Review</span>
           <div class="start-grid">
-            <button class="start-btn review-btn" id="btn-form-A" onclick="app.attemptStart('A')">📘 Review (Form A)<span class="form-btn-sub">18 questions · 2 tries</span></button>
-            <button class="start-btn review-b-btn" id="btn-form-B" onclick="app.attemptStart('B')">📗 Review (Form B)<span class="form-btn-sub">18 questions · 2 tries</span></button>
+            <button class="start-btn review-btn" id="btn-form-A" onclick="app.attemptStart('A')">📘 Review A<span class="form-btn-sub">18 questions · 💡 hints · 2 tries</span></button>
+            <button class="start-btn review-b-btn" id="btn-form-B" onclick="app.attemptStart('B')">📗 Review B<span class="form-btn-sub">18 questions · no hints · 2 tries</span></button>
           </div>
-          <p class="form-note">You will see the right answer and <strong>why</strong> after every question.</p>
+          <p class="form-note">You will see the right answer and <strong>why</strong> after every question. 💡 Review A has a hint on every question.</p>
         </div>
 
         <!-- Not taken yet → start the test -->
         <div class="step-card" id="quiz-start-card">
-          <span class="step-label">Step 2 — The Module 2 Test</span>
+          <span class="step-label">Step 2 — Test A</span>
           <div class="start-grid">
-            <button class="start-btn" id="btn-form-T" onclick="app.attemptStart('T')">📝 Take the Module 2 Test<span class="form-btn-sub">18 questions · one try</span></button>
+            <button class="start-btn" id="btn-form-T" onclick="app.attemptStart('T')">📝 Take Test A<span class="form-btn-sub">18 questions · one try</span></button>
           </div>
         </div>
 
@@ -102,7 +102,7 @@
           <div style="background:#fdecea;border:3px solid #e74c3c;border-radius:16px;padding:22px 20px;text-align:center;margin-bottom:16px;">
             <div style="font-size:2.5rem;margin-bottom:8px;">✅</div>
             <p style="margin:0 0 6px;font-weight:800;color:#a00000;font-size:1.1rem;">Test Already Completed</p>
-            <p id="completed-detail" style="margin:0 0 14px;color:#555;font-size:0.9rem;">You have already taken the Module 2 Test.</p>
+            <p id="completed-detail" style="margin:0 0 14px;color:#555;font-size:0.9rem;">You have already taken Test A.</p>
             <button onclick="app.requestRetake()" style="background:none;border:none;color:#c0392b;font-size:0.85rem;cursor:pointer;font-family:inherit;text-decoration:underline;padding:4px;">🔑 Request Retake (Teacher PIN required)</button>
           </div>
         </div>
@@ -111,14 +111,15 @@
         <div class="step-card hidden" id="retake-card">
           <span class="step-label">Retake — Unlocked by Your Teacher</span>
           <div class="start-grid">
-            <button class="start-btn" id="btn-retake" onclick="app.startRetake()">🔁 Retake the Module 2 Test<span class="form-btn-sub">18 questions · new numbers</span></button>
+            <button class="start-btn" id="btn-retake" onclick="app.startRetake()">🔁 Retake — Test B<span class="form-btn-sub">18 questions · new numbers</span></button>
           </div>
         </div>
 
         <div style="background:#f0f4ff;border:2px solid #a9c4f5;border-radius:12px;
                      padding:12px 16px;margin-bottom:12px;font-size:0.88rem;color:#2c3e50;line-height:1.6;">
-          📋 <strong>Rules:</strong> The review has two forms. You get 2 tries on each form.
-          You take the <strong>test one time</strong>. After you finish, it locks.
+          📋 <strong>Rules:</strong> There are two reviews. Review A has hints. Review B does not.
+          You can take each review <strong>two times</strong>.
+          You take <strong>Test A one time</strong>. After you finish, it locks.
           Only your teacher can unlock a retake.
         </div>
       </div>
@@ -191,17 +192,17 @@
     <div class="dir-section form-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">📘 Step 1 — Review (Form A and Form B)</h3>
+        <h3 style="margin:0;">📘 Step 1 — Review A and Review B</h3>
       </div>
-      <p class="dir-text">The review has two forms. Each form has 18 questions. After each answer you will see the right answer and why. You will also see the work. You get 2 tries on each form.</p>
+      <p class="dir-text">There are two reviews. Each one has 18 questions. Review A has a hint on every question. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. Review B has no hints. After each answer you will see the right answer and why. You will also see the work. You can take each review two times.</p>
     </div>
 
     <div class="dir-section attempts-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">🔒 Step 2 — The Module 2 Test</h3>
+        <h3 style="margin:0;">🔒 Step 2 — Test A</h3>
       </div>
-      <p class="dir-text">The test has 18 questions. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
+      <p class="dir-text">Test A is the real test. It has 18 questions. There are no hints. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
     </div>
 
     <div class="dir-section read-dir">
@@ -377,12 +378,12 @@
 
 </div><!-- /.container -->
 
-<script src="data/form_a.js?v=m2a"></script>
-<script src="data/form_b.js?v=m2a"></script>
-<script src="data/form_t.js?v=m2a"></script>
-<script src="data/form_u.js?v=m2a"></script>
-<script src="data/skills.js?v=m2a"></script>
-<script src="visuals.js?v=m2a"></script>
-<script src="script.js?v=m2a"></script>
+<script src="data/form_a.js?v=m2b"></script>
+<script src="data/form_b.js?v=m2b"></script>
+<script src="data/form_t.js?v=m2b"></script>
+<script src="data/form_u.js?v=m2b"></script>
+<script src="data/skills.js?v=m2b"></script>
+<script src="visuals.js?v=m2b"></script>
+<script src="script.js?v=m2b"></script>
 </body>
 </html>

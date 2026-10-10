@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════
-   MATH MODULE 2 · REVIEW — Form B
+   MATH MODULE 2 · REVIEW B (no hints)
    18 questions. Same kind of question in the same slot on every
    form (B01 ↔ the other forms' 01), so the dashboard compares
    review → test skill by skill. The slots follow the HMH Module 2
    Test (14 items → 18 scored parts); numbers and stories are our own.
    BUILT BY A SCRIPT — every answer and wrong choice is computed.
-   pic = picture under the question · explain = pictures in the
+   hint = opt-in hint (Review A only) · pic = picture under the question · explain = pictures in the
    feedback (see visuals.js). Use "−" (not "-") for minus.
 ═══════════════════════════════════════════════════════ */
 window.FORM_B = [

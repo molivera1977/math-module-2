@@ -5,11 +5,14 @@
    practice and quiz sites"). Engine = copy of the Rounding Review and
    Quiz - Numberline Edition (math-rounding-quiz-2): steps on one start
    screen, a part banner on every question, one open/closed flag per part.
-   - Forms A and B = the REVIEW — the answer, why, and the worked
-     picture after every question; two tries on each form
-     (review-site standard), then the Teacher PIN unlocks more
-   - Form T = the MODULE 2 TEST — one attempt, right/wrong only, then
-     locked; a retake (Form U, fresh numbers) needs the Teacher PIN
+   Two copies of each (Marcos 10/9):
+   - REVIEW A (with hints) and REVIEW B (no hints) — the answer, why,
+     and the worked picture after every question; each can be taken
+     two times (a third needs the Teacher PIN)
+   - TEST A = the official test — one attempt, right/wrong only, then
+     locked. TEST B = the retake copy (new numbers), Teacher PIN only.
+     In the code Test A is form T (ids T01–T18) and Test B is form U
+     (ids U01–U18), so their ids never collide with Review A / B.
    - Same kind of question in the same slot on all four forms, so the
      dashboard compares review → test skill by skill
    Game keys mod2a-review / mod2b-review / mod2t-test / mod2u-test,
@@ -20,8 +23,8 @@
 /* ── CONFIG ─────────────────────────────────────────── */
 // Each part opens on its own. false = students locked out of that part;
 // Teacher Access still works. Set true to open.
-const REVIEW_OPEN   = false;   // Forms A and B — Review
-const TEST_OPEN     = false;   // Form T — the Module 2 Test (Form U = retake)
+const REVIEW_OPEN   = false;   // Review A (hints) and Review B (no hints)
+const TEST_OPEN     = false;   // Test A — official (Test B = retake, Teacher PIN)
 // true = the test does not wait for a finished review (same as the rounding
 // sites since 10/8: parts can be done in any order — TEST_OPEN is the real lock).
 // false = the test opens after one finished review; the Teacher PIN can skip that.
@@ -44,7 +47,7 @@ const isReview = form => form === 'A' || form === 'B';
 const isTest   = form => form === 'T' || form === 'U';
 // The review teaches (answer + why + the worked picture); the test does not
 const teaches = form => isReview(form);
-const FORM_NAMES = { A: 'Review (Form A)', B: 'Review (Form B)', T: 'Module 2 Test', U: 'Module 2 Test — Retake' };
+const FORM_NAMES = { A: 'Review A', B: 'Review B', T: 'Test A', U: 'Test B (Retake)' };
 function formOpen(form) { return isReview(form) ? REVIEW_OPEN : TEST_OPEN; }
 /* Sheet / dashboard game key — one per form */
 function gameKey(form) {
@@ -67,10 +70,10 @@ function missEntry(m) {
   return `[${m.id}] (${skill}) ${m.q}${picked}`;
 }
 
-/* Forms A and B are the review; Form T is the test; Form U is the test's retake form. */
+/* What the sheet's "form" column says: Review A · Review B · Test A · Test B — Retake */
 function formLabel(attempt) {
-  if (isReview(app.currentForm)) return `Form ${app.currentForm} — Review`;
-  return app.currentForm === 'U' ? 'Test — Retake' : 'Test';
+  if (isReview(app.currentForm)) return `Review ${app.currentForm}`;
+  return app.currentForm === 'U' ? 'Test B — Retake' : 'Test A';
 }
 /* The attempt this session will be once it finishes (finished ones on this device + 1). */
 function upcomingAttempt() {
@@ -338,7 +341,7 @@ function speakHint(btn) {
 /* ── PART BANNER (Marcos 10/8: "I want to be able to know which part the
    students are on") — a big colored label on top of every question:
    the step number and the part's name, one color per part. ── */
-const PART_BANNER = { A: ['📘', 'Step 1 · Review (Form A)', 'pb-review'], B: ['📗', 'Step 1 · Review (Form B)', 'pb-review-b'], T: ['📝', 'Step 2 · Module 2 Test', 'pb-quiz'], U: ['📝', 'Step 2 · Module 2 Test', 'pb-quiz'] };
+const PART_BANNER = { A: ['📘', 'Step 1 · Review A', 'pb-review'], B: ['📗', 'Step 1 · Review B', 'pb-review-b'], T: ['📝', 'Step 2 · Test A', 'pb-quiz'], U: ['📝', 'Step 2 · Test B', 'pb-quiz'] };
 function setPartBanner(form) {
   const el = document.getElementById('part-banner');
   const p = PART_BANNER[form];
@@ -382,10 +385,10 @@ function getFormAttempts(name) {
   return counts;
 }
 
-/* The test (Form T) is one attempt. Once it is finished on this device the
-   student sees "Test Already Completed"; a retake (Form U) needs the Teacher
-   PIN every time. Each review form gets two tries, then a Teacher PIN unlocks
-   each extra try (same as the MM1 Review). */
+/* Test A is one attempt. Once it is finished on this device the student sees
+   "Test Already Completed"; a retake (Test B) needs the Teacher PIN every
+   time. Each review can be taken two times; after that only a Teacher PIN
+   unlocks another try (same as the MM1 Review). */
 function testCompleted(name) {
   const a = getFormAttempts(name);
   return a.T > 0 || a.U > 0;
@@ -419,15 +422,15 @@ function applyFormLocks(name) {
   const startCard = document.getElementById('quiz-start-card');
   const doneCard  = document.getElementById('completed-container');
   const retake    = document.getElementById('retake-card');
-  [['A', '📘'], ['B', '📗']].forEach(([form, icon]) => {
-    setFormButton(form, `${icon} Review (Form ${form})`,
-      a[form] === 0 ? '18 questions · 2 tries'
-      : a[form] === 1 ? '🔁 Attempt 2 available'
-      : '🔒 2/2 attempts used · Teacher PIN for more');
+  [['A', '📘', '💡 hints'], ['B', '📗', 'no hints']].forEach(([form, icon, kind]) => {
+    setFormButton(form, `${icon} Review ${form}`,
+      a[form] === 0 ? `18 questions · ${kind} · 2 tries`
+      : a[form] === 1 ? `🔁 Try 2 of 2 · ${kind}`
+      : '🔒 2 of 2 tries used');
     const btn = document.getElementById('btn-form-' + form);
     if (btn && formOpen(form) && a[form] >= 2) btn.classList.add('locked');
   });
-  setFormButton('T', '📝 Take the Module 2 Test', '18 questions · one try',
+  setFormButton('T', '📝 Take Test A', '18 questions · one try',
     gate(reviewFinished(name)) ? '' : 'Finish a review first');
   if (startCard) startCard.classList.toggle('hidden', done);
   if (doneCard)  doneCard.classList.toggle('hidden', !done || retakeUnlocked);
@@ -436,8 +439,8 @@ function applyFormLocks(name) {
     const taken = a.T + a.U;
     const detail = document.getElementById('completed-detail');
     if (detail) detail.textContent = taken === 1
-      ? 'You have already taken the Module 2 Test.'
-      : `You have already taken the Module 2 Test ${taken} times.`;
+      ? 'You have already taken Test A.'
+      : 'You have already taken Test A and a retake.';
   }
 }
 
@@ -780,7 +783,7 @@ const app = {
     if (form === 'T' && !gate(reviewFinished(this.studentName))) {
       this.showPinModal(
         '📘 Review First',
-        `${getFirstName(this.studentName)}, finish a review (Form A or Form B) before you take the test. ` +
+        `${getFirstName(this.studentName)}, finish Review A or Review B before you take the test. ` +
         `Teachers: enter your PIN to let this student skip the review.`,
         () => this.startSession('T')
       );
@@ -790,7 +793,7 @@ const app = {
     if (isReview(form) && getFormAttempts(this.studentName)[form] >= 2) {
       this.showPinModal(
         '🔓 Unlock the Review',
-        `${getFirstName(this.studentName)} has already used both tries on Review Form ${form}. Enter Teacher PIN to allow an extra try.`,
+        `${getFirstName(this.studentName)} has already taken Review ${form} two times. Enter Teacher PIN to allow an extra try.`,
         () => this.startSession(form)
       );
       return;
@@ -803,7 +806,7 @@ const app = {
     if (!this.studentName) return;
     this.showPinModal(
       '🔑 Allow a Retake',
-      `Enter Teacher PIN to let ${getFirstName(this.studentName)} retake the Module 2 Test. The retake has new numbers.`,
+      `Enter Teacher PIN to let ${getFirstName(this.studentName)} take a retake. The retake is Test B. It has new numbers.`,
       () => { retakeUnlocked = true; applyFormLocks(this.studentName); }
     );
   },
@@ -811,7 +814,7 @@ const app = {
   startRetake() {
     if (!this.studentName || !retakeUnlocked) return;
     retakeUnlocked = false;            // one PIN = one retake
-    this.startSession('U');            // the retake form: same skills, new numbers
+    this.startSession('U');            // Test B: same skills, new numbers
   },
 
   /* ── TEACHER REVIEW MODE ── */
@@ -825,7 +828,7 @@ const app = {
   },
 
   _showReviewPicker() {
-    const form = prompt('Choose a form to look at:\n1 — Review (Form A)\n2 — Review (Form B)\n3 — Module 2 Test\n4 — Module 2 Test, retake form\n\nEnter 1, 2, 3 or 4:');
+    const form = prompt('Choose a copy to look at:\n1 — Review A (hints)\n2 — Review B (no hints)\n3 — Test A (official)\n4 — Test B (retake)\n\nEnter 1, 2, 3 or 4:');
     const map = { '1': 'A', '2': 'B', '3': 'T', '4': 'U' };
     if (!map[form]) { alert('Invalid choice.'); reviewMode = false; return; }
     const mode = prompt('Choose review mode:\n1 — Manual (tap Next each question)\n2 — Auto-run (fully automatic)\n\nEnter 1 or 2:');
@@ -906,7 +909,7 @@ const app = {
       if (this.studentName && data.studentName === this.studentName) {
         rc.classList.remove('hidden');
         document.getElementById('resume-detail').textContent =
-          `${FORM_NAMES[data.currentForm] || 'Module 2 Test'} — Q${data.currentIndex + 1} of ${data.currentBank.length}`;
+          `${FORM_NAMES[data.currentForm] || 'Test A'} — Q${data.currentIndex + 1} of ${data.currentBank.length}`;
         if (formSelect) formSelect.classList.add('hidden');
       } else {
         rc.classList.add('hidden');
@@ -1247,8 +1250,8 @@ const app = {
       this.missedQuestions.push({ id: q.id, q: q.q, skill: (window.SKILLS || {})[q.id], yourAnswer: this.selectedAnswer, correct: q.answer, explanation: q.explanation || '' });
     }
 
-    // The review (Forms A and B) teaches: the right answer + why, every time.
-    // The test (Forms T and U): mark only the student's own pick — the right
+    // Review A and Review B teach: the right answer + why, every time.
+    // Test A and Test B: mark only the student's own pick — the right
     // answer is never shown (the teacher's review mode still sees it).
     const teach = teaches(this.currentForm) || reviewMode;
     document.querySelectorAll('.answer-btn').forEach(btn => {
