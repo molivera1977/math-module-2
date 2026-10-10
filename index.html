@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2c" />
+  <link rel="stylesheet" href="style.css?v=m2d" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -22,7 +22,7 @@
     <div id="welcome-panel" style="text-align:center;padding:10px 0 24px;">
       <p style="font-size:1.05rem;color:#777;margin:0 auto 28px;max-width:400px;line-height:1.8;">
         Add big numbers. Subtract big numbers. Find how many more. Find the perimeter.<br>
-        Review first. Then show what you know on the test!
+        Practice, then review. Then show what you know on the test!
       </p>
       <button class="lgs-btn" onclick="app.showReadAloudIntro()">🚀 Let's Get Started!</button>
       <div style="text-align:right;margin-top:10px;">
@@ -76,22 +76,31 @@
         </div>
       </div>
 
-      <!-- STEP 1 — REVIEW A (hints) + REVIEW B (no hints), two times each · STEP 2 — TEST A (official, once); TEST B = Teacher-PIN retake -->
+      <!-- STEP 1 — PRACTICE (easy start, any number of times) · STEP 2 — REVIEW A (hints) + REVIEW B (no hints), two times each · STEP 3 — TEST A (official, once); TEST B = Teacher-PIN retake -->
       <div id="form-select-section" class="hidden">
+
+        <!-- Practice — the easy start: in order, columns shown, a hint on every question; as many tries as they like -->
+        <div class="step-card" id="practice-card">
+          <span class="step-label">Step 1 — Practice</span>
+          <div class="start-grid">
+            <button class="start-btn practice-btn" id="btn-form-P" onclick="app.attemptStart('P')">🌱 Practice<span class="form-btn-sub">18 questions · the easy start · 💡 hints</span></button>
+          </div>
+          <p class="form-note">Start here if you want an easy warm-up. The problems are <strong>already in columns</strong>.</p>
+        </div>
 
         <!-- Review — two copies: A has hints, B does not; each can be taken two times -->
         <div class="step-card" id="review-card">
-          <span class="step-label">Step 1 — Review</span>
+          <span class="step-label">Step 2 — Review</span>
           <div class="start-grid">
             <button class="start-btn review-btn" id="btn-form-A" onclick="app.attemptStart('A')">📘 Review A<span class="form-btn-sub">18 questions · 💡 hints · 2 tries</span></button>
             <button class="start-btn review-b-btn" id="btn-form-B" onclick="app.attemptStart('B')">📗 Review B<span class="form-btn-sub">18 questions · no hints · 2 tries</span></button>
           </div>
-          <p class="form-note">You will see the right answer and <strong>why</strong> after every question. 💡 Review A has a hint on every question.</p>
+          <p class="form-note">You will see the right answer and <strong>why</strong> after every question. 💡 Review A has a hint on every question. 🔁 Miss one? You get to try one like it.</p>
         </div>
 
         <!-- Not taken yet → start the test -->
         <div class="step-card" id="quiz-start-card">
-          <span class="step-label">Step 2 — Test A</span>
+          <span class="step-label">Step 3 — Test A</span>
           <div class="start-grid">
             <button class="start-btn" id="btn-form-T" onclick="app.attemptStart('T')">📝 Take Test A<span class="form-btn-sub">18 questions · one try</span></button>
           </div>
@@ -117,7 +126,8 @@
 
         <div style="background:#f0f4ff;border:2px solid #a9c4f5;border-radius:12px;
                      padding:12px 16px;margin-bottom:12px;font-size:0.88rem;color:#2c3e50;line-height:1.6;">
-          📋 <strong>Rules:</strong> There are two reviews. Review A has hints. Review B does not.
+          📋 <strong>Rules:</strong> Practice as many times as you like.
+          There are two reviews. Review A has hints. Review B does not.
           You can take each review <strong>two times</strong>.
           Finish <strong>one review</strong> before the test.
           You take <strong>Test A one time</strong>. After you finish, it locks.
@@ -190,20 +200,36 @@
       <p class="dir-text">You will add and subtract big numbers. Do the work on paper. Write the numbers in columns. Line up the places. Then pick your answer.</p>
     </div>
 
+    <div class="dir-section practice-dir">
+      <div class="dir-row">
+        <button class="speak-btn" onclick="speakDir(this)">🔊</button>
+        <h3 style="margin:0;">🌱 Step 1 — Practice</h3>
+      </div>
+      <p class="dir-text">Practice is the easy start. It has 18 questions. The numbers are smaller. The problems are already in columns. Every question has a hint. After each answer you will see the right answer and why. You can do it as many times as you like.</p>
+    </div>
+
+    <div class="dir-section words-dir">
+      <div class="dir-row">
+        <button class="speak-btn" onclick="speakDir(this)">🔊</button>
+        <h3 style="margin:0;">📖 Word Help</h3>
+      </div>
+      <p class="dir-text">Some questions have word buttons under them. Tap a word to see what it means. You will see an example too. Tap the speaker to hear it. Word help is in the practice and the reviews. It is not on the test.</p>
+    </div>
+
     <div class="dir-section form-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">📘 Step 1 — Review A and Review B</h3>
+        <h3 style="margin:0;">📘 Step 2 — Review A and Review B</h3>
       </div>
-      <p class="dir-text">There are two reviews. Each one has 18 questions. Review A has a hint on every question. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. Review B has no hints. After each answer you will see the right answer and why. You will also see the work. You can take each review two times.</p>
+      <p class="dir-text">There are two reviews. Each one has 18 questions. Review A has a hint on every question. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. Review B has no hints. After each answer you will see the right answer and why. You will also see the work. If you miss a question, you get to try one like it. That extra question does not change your score. You can take each review two times.</p>
     </div>
 
     <div class="dir-section attempts-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">🔒 Step 2 — Test A</h3>
+        <h3 style="margin:0;">🔒 Step 3 — Test A</h3>
       </div>
-      <p class="dir-text">Finish Review A or Review B first. Then Test A opens. Test A is the real test. It has 18 questions. There are no hints. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
+      <p class="dir-text">Finish Review A or Review B first. Then Test A opens. Test A is the real test. It has 18 questions. There are no hints and no word help. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
     </div>
 
     <div class="dir-section read-dir">
@@ -260,6 +286,8 @@
     </div>
     <!-- Which part this is, big enough to read from across the room (Marcos 10/8) -->
     <div id="part-banner" class="part-banner" role="status"></div>
+    <!-- "Try one like it" — shown only on the extra question that follows a miss in a review -->
+    <div id="twin-note" class="twin-note hidden" role="status">🔁 <strong>Try one like it.</strong> This one does not change your score.</div>
     <div class="q-badge">
       <span class="q-badge-pill" id="progress-text">Question 1 of 18</span>
       <span class="score-badge" id="score-text">Score: 0</span>
@@ -283,6 +311,7 @@
       <button class="speak-btn" id="speak-q-btn" onclick="app.speakQuestion()" title="Read question aloud">🔊</button>
       <h2 id="question-text"></h2>
     </div>
+    <div id="q-words"></div>
     <div id="q-visual"></div>
 
     <div class="options-grid" id="answers" role="radiogroup" aria-label="Answer choices"></div>
@@ -379,12 +408,16 @@
 
 </div><!-- /.container -->
 
-<script src="data/form_a.js?v=m2c"></script>
-<script src="data/form_b.js?v=m2c"></script>
-<script src="data/form_t.js?v=m2c"></script>
-<script src="data/form_u.js?v=m2c"></script>
-<script src="data/skills.js?v=m2c"></script>
-<script src="visuals.js?v=m2c"></script>
-<script src="script.js?v=m2c"></script>
+<script src="data/form_p.js?v=m2d"></script>
+<script src="data/form_a.js?v=m2d"></script>
+<script src="data/form_b.js?v=m2d"></script>
+<script src="data/form_t.js?v=m2d"></script>
+<script src="data/form_u.js?v=m2d"></script>
+<script src="data/twin_x.js?v=m2d"></script>
+<script src="data/twin_y.js?v=m2d"></script>
+<script src="data/words.js?v=m2d"></script>
+<script src="data/skills.js?v=m2d"></script>
+<script src="visuals.js?v=m2d"></script>
+<script src="script.js?v=m2d"></script>
 </body>
 </html>

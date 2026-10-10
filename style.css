@@ -666,6 +666,7 @@ button.answer-btn.incorrect { background: #f8d7da; border-color: #dc3545; color:
   box-shadow: 0 4px 0 rgba(0,0,0,.15);
 }
 .part-banner:empty { display: none; }
+.part-banner.pb-practice   { background: #1e8449; }
 .part-banner.pb-review     { background: #2471a3; }
 .part-banner.pb-review-b   { background: #117a65; }
 .part-banner.pb-quiz       { background: #3b2491; }
@@ -725,3 +726,41 @@ button.answer-btn.incorrect { background: #f8d7da; border-color: #dc3545; color:
   .m2-stack { font-size: 1.35rem; }
   .m2-work  { font-size: 1.05rem; }
 }
+
+/* ══ HELP FOR STUDENTS WHO ARE STUCK (10/10) ═════════════════ */
+/* Step 1 — Practice (green, like the rounding sites' Practice A) */
+.start-btn.practice-btn { background: #27ae60; box-shadow: 0 5px 0 #1e8449; }
+.start-btn.practice-btn:hover { box-shadow: 0 8px 0 #1e8449; }
+#practice-card .step-label { color: #1e8449; }
+.practice-dir    { background: #eafaf1; border-color: #82e0aa; }
+.practice-dir h3 { color: #1e8449; }
+.words-dir    { background: #eef6ff; border-color: #9cc5f0; }
+.words-dir h3 { color: #1f5f99; }
+
+/* the mistake, named, inside the feedback */
+.slip-note { display: block; overflow: hidden; margin: 6px 0; padding: 6px 10px; border-left: 5px solid #e67e22; background: #fff7ec; color: #6b3d00; font-weight: 700; border-radius: 6px; }
+
+/* "try one like it" strip */
+.twin-note { background: #fff4d6; border: 2px solid #f0b429; color: #6b4a00; border-radius: 12px; padding: 8px 14px; margin-bottom: 12px; text-align: center; font-size: 1.02rem; }
+.mi-twin { margin-top: 6px; font-size: 0.88rem; font-weight: 700; }
+.mi-twin.right { color: var(--correct-dk); }
+.mi-twin.wrong { color: var(--danger); }
+
+/* word help: a button per math word, and the card it opens */
+#q-words:empty { display: none; }
+#q-words { margin: 2px 0 12px; }
+.word-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.word-label { font-size: 0.9rem; font-weight: 700; color: #555; }
+.word-chip { font: inherit; font-size: 0.95rem; font-weight: 700; color: #1f5f99; background: #eef6ff; border: 2px solid #9cc5f0; border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+.word-chip:hover, .word-chip:focus-visible { background: #dcecff; outline: none; border-color: #1f5f99; }
+.word-chip.open { background: #1f5f99; color: #fff; border-color: #1f5f99; }
+.word-card { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; background: #f5faff; border: 2px solid #9cc5f0; border-radius: 12px; padding: 10px 12px; color: #2c3e50; }
+.word-card-text { flex: 1; font-size: 1rem; line-height: 1.6; }
+.word-card-ex { margin-top: 4px; color: #444; }
+.word-card .m2-vis { margin-top: 8px; max-width: 360px; }
+.word-close { font: inherit; font-weight: 800; background: none; border: none; color: #777; cursor: pointer; padding: 2px 6px; }
+
+/* pictures under a question: the "?" where the answer goes, the missing part of the bar model */
+.m2-stack .m2-ask td { color: var(--primary); }
+.m2-bar-ask { background: repeating-linear-gradient(45deg, #fff, #fff 6px, #f1edfb 6px, #f1edfb 12px); color: var(--primary); font-size: 1.3rem !important; }
+#q-visual .m2-vis { max-width: 520px; margin-left: auto; margin-right: auto; }

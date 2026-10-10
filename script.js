@@ -15,14 +15,23 @@
      (ids U01–U18), so their ids never collide with Review A / B.
    - Same kind of question in the same slot on all four forms, so the
      dashboard compares review → test skill by skill
-   Game keys mod2a-review / mod2b-review / mod2t-test / mod2u-test,
-   storage prefix mm2_. Pictures live in visuals.js.
+   Help for students who are stuck (Marcos 10/10), none of it on the tests:
+   - PRACTICE (form P) — an easy Step 1: in order, the problem already in
+     columns, a hint on every question, as many tries as they like
+   - a wrong answer NAMES THE MISTAKE (each wrong choice carries the slip it
+     stands for: data `slips`)
+   - TRY ONE LIKE IT — after a miss in Review A / B the student gets one more
+     question of the same kind (twin_x.js / twin_y.js); it never changes the score
+   - WORD HELP — a button under the question for each math word in it (data/words.js)
+   Game keys mod2-practice / mod2a-review / mod2b-review / mod2t-test /
+   mod2u-test, storage prefix mm2_. Pictures live in visuals.js.
    PIN: 9377 (Teacher override)
 ═══════════════════════════════════════════════════════ */
 
 /* ── CONFIG ─────────────────────────────────────────── */
 // Each part opens on its own. false = students locked out of that part;
 // Teacher Access still works. Set true to open.
+const PRACTICE_OPEN = false;   // Practice — the easy start (Step 1)
 const REVIEW_OPEN   = false;   // Review A (hints) and Review B (no hints)
 const TEST_OPEN     = false;   // Test A — official (Test B = retake, Teacher PIN)
 // Marcos 10/10: "the test must wait for at least one review. For a test to be
@@ -43,16 +52,19 @@ const SESSION_ID = (() => {
   return id;
 })();
 
-const FORMS = ['A', 'B', 'T', 'U'];
+const FORMS = ['P', 'A', 'B', 'T', 'U'];
+const isPractice = form => form === 'P';
 const isReview = form => form === 'A' || form === 'B';
 const isTest   = form => form === 'T' || form === 'U';
-// The review teaches (answer + why + the worked picture); the test does not
-const teaches = form => isReview(form);
-const FORM_NAMES = { A: 'Review A', B: 'Review B', T: 'Test A', U: 'Test B (Retake)' };
-function formOpen(form) { return isReview(form) ? REVIEW_OPEN : TEST_OPEN; }
+// Practice and the reviews teach (answer + why + the worked picture + the mistake named); the tests do not
+const teaches = form => isReview(form) || isPractice(form);
+// "Try one like it": after a miss in a review, one more question of the same kind from this bank
+const TWINS = { A: 'X', B: 'Y' };
+const FORM_NAMES = { P: 'Practice', A: 'Review A', B: 'Review B', T: 'Test A', U: 'Test B (Retake)' };
+function formOpen(form) { return isPractice(form) ? PRACTICE_OPEN : isReview(form) ? REVIEW_OPEN : TEST_OPEN; }
 /* Sheet / dashboard game key — one per form */
 function gameKey(form) {
-  return { A: 'mod2a-review', B: 'mod2b-review', T: 'mod2t-test', U: 'mod2u-test' }[form];
+  return { P: 'mod2-practice', A: 'mod2a-review', B: 'mod2b-review', T: 'mod2t-test', U: 'mod2u-test' }[form];
 }
 
 /* ── SHEET SUBMISSION ───────────────────────────────── */
@@ -71,8 +83,9 @@ function missEntry(m) {
   return `[${m.id}] (${skill}) ${m.q}${picked}`;
 }
 
-/* What the sheet's "form" column says: Review A · Review B · Test A · Test B — Retake */
+/* What the sheet's "form" column says: Practice · Review A · Review B · Test A · Test B — Retake */
 function formLabel(attempt) {
+  if (isPractice(app.currentForm)) return 'Practice';
   if (isReview(app.currentForm)) return `Review ${app.currentForm}`;
   return app.currentForm === 'U' ? 'Test B — Retake' : 'Test A';
 }
@@ -317,7 +330,7 @@ function hintBoxHTML(hint, shown) {
 function speakHint(btn) {
   if (activeSpeakBtn === btn) { stopActiveSpeech(); return; }
   stopActiveSpeech();
-  const q = app.currentBank && app.currentBank[app.currentIndex];
+  const q = app.currentQ();
   if (!q || !q.hint) return;
   const spans = Array.from(btn.parentElement.querySelectorAll('.wrd'));
   activeSpeakBtn = btn;
@@ -339,10 +352,70 @@ function speakHint(btn) {
   window.speechSynthesis.speak(u);
 }
 
+/* ── WORD HELP (Marcos 10/10) ──
+   Each math word in the question gets a button under it. Tapping one opens a
+   card: what the word means, an example, sometimes a picture, and its own 🔊.
+   Nothing opens or speaks on its own. Practice and the reviews only — the
+   tests measure whether the student knows these words. Every open is logged
+   (event "word") so the dashboard can show who needed which word. */
+const WORD_MAX = 4;
+function wordsIn(q) {
+  const text = ' ' + String(q.q).toLowerCase() + ' ';
+  const found = [];
+  (window.WORDS || []).forEach(w => {
+    let at = -1;
+    w.find.forEach(ph => {
+      const m = new RegExp('[^a-z]' + ph.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^a-z]').exec(text);
+      if (m && (at < 0 || m.index < at)) at = m.index;
+    });
+    if (at >= 0) found.push({ w, at });
+  });
+  return found.sort((a, b) => a.at - b.at).slice(0, WORD_MAX).map(x => x.w);
+}
+function wordChipsHTML(q, openKey) {
+  const list = wordsIn(q);
+  if (!list.length) return '';
+  const chips = list.map(w =>
+    `<button type="button" class="word-chip${w.key === openKey ? ' open' : ''}" aria-expanded="${w.key === openKey}" ` +
+    `onclick="app.showWord('${w.key}')">${w.word}</button>`).join('');
+  const w = list.find(x => x.key === openKey);
+  const card = !w ? '' :
+    `<div class="word-card" role="note"><button type="button" class="speak-btn word-speak-btn" title="Read this aloud" ` +
+    `aria-label="Read the meaning of ${w.word} aloud" onclick="speakWordCard(this)">🔊</button>` +
+    `<div class="word-card-text"><div class="word-card-means">${wrapWords('<strong>' + w.word + '</strong> — ' + formatMathText(w.means))}</div>` +
+    `<div class="word-card-ex">${wrapWords('<em>Example:</em> ' + formatMathText(w.ex))}</div>` +
+    `${w.pic ? M2V.picHTML(w.pic) : ''}</div>` +
+    `<button type="button" class="word-close" aria-label="Close" onclick="app.showWord('${w.key}')">✕</button></div>`;
+  return `<div class="word-row"><span class="word-label" aria-hidden="true">📖 Word help:</span>${chips}</div>${card}`;
+}
+function speakWordCard(btn) {
+  if (activeSpeakBtn === btn) { stopActiveSpeech(); return; }
+  stopActiveSpeech();
+  const spans = Array.from(btn.parentElement.querySelectorAll('.word-card-text .wrd')).filter(s => /[A-Za-z0-9+=×−]/.test(s.textContent));
+  if (!spans.length) return;
+  activeSpeakBtn = btn;
+  btn.textContent = '⏹';
+  const u = new SpeechSynthesisUtterance(convertToSpokenText(spans.map(s => s.textContent).join(' ')));
+  u.lang = 'en-US'; u.rate = 0.92;
+  let hlIdx = 0;
+  u.onboundary = e => {
+    if (e.name !== 'word') return;
+    spans.forEach(el => el.classList.remove('hl'));
+    if (spans[hlIdx]) spans[hlIdx].classList.add('hl');
+    hlIdx++;
+  };
+  u.onend = () => {
+    spans.forEach(el => el.classList.remove('hl'));
+    if (activeSpeakBtn === btn) { btn.textContent = '🔊'; activeSpeakBtn = null; }
+  };
+  addHighlightFallback(u, spans);
+  window.speechSynthesis.speak(u);
+}
+
 /* ── PART BANNER (Marcos 10/8: "I want to be able to know which part the
    students are on") — a big colored label on top of every question:
    the step number and the part's name, one color per part. ── */
-const PART_BANNER = { A: ['📘', 'Step 1 · Review A', 'pb-review'], B: ['📗', 'Step 1 · Review B', 'pb-review-b'], T: ['📝', 'Step 2 · Test A', 'pb-quiz'], U: ['📝', 'Step 2 · Test B', 'pb-quiz'] };
+const PART_BANNER = { P: ['🌱', 'Step 1 · Practice', 'pb-practice'], A: ['📘', 'Step 2 · Review A', 'pb-review'], B: ['📗', 'Step 2 · Review B', 'pb-review-b'], T: ['📝', 'Step 3 · Test A', 'pb-quiz'], U: ['📝', 'Step 3 · Test B', 'pb-quiz'] };
 function setPartBanner(form) {
   const el = document.getElementById('part-banner');
   const p = PART_BANNER[form];
@@ -379,7 +452,7 @@ function addHighlightFallback(u, spans) {
 /* ── ATTEMPT TRACKING ───────────────────────────────── */
 function getFormAttempts(name) {
   const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
-  const counts = { A: 0, B: 0, T: 0, U: 0 };
+  const counts = { P: 0, A: 0, B: 0, T: 0, U: 0 };
   scores.filter(s => s.name === name && s.done).forEach(s => {
     if (counts[s.form] !== undefined) counts[s.form]++;
   });
@@ -423,6 +496,8 @@ function applyFormLocks(name) {
   const startCard = document.getElementById('quiz-start-card');
   const doneCard  = document.getElementById('completed-container');
   const retake    = document.getElementById('retake-card');
+  setFormButton('P', '🌱 Practice',
+    a.P === 0 ? '18 questions · the easy start · 💡 hints' : '🔁 Practice again any time');
   [['A', '📘', '💡 hints'], ['B', '📗', 'no hints']].forEach(([form, icon, kind]) => {
     setFormButton(form, `${icon} Review ${form}`,
       a[form] === 0 ? `18 questions · ${kind} · 2 tries`
@@ -664,7 +739,7 @@ const app = {
 
   /* ── READ ALOUD INTRO ── */
   showReadAloudIntro() {
-    if (!REVIEW_OPEN && !TEST_OPEN) return;
+    if (!PRACTICE_OPEN && !REVIEW_OPEN && !TEST_OPEN) return;
     document.getElementById('welcome-panel').classList.add('hidden');
     this.show('readaloud-screen');
     setTimeout(speakReadAloudIntro, 150);   // announces itself (show() just cancelled any speech)
@@ -777,7 +852,7 @@ const app = {
 
   /* ── ATTEMPT START ── */
   attemptStart(form) {
-    if (!this.studentName || !['A', 'B', 'T'].includes(form) || !formOpen(form)) return;
+    if (!this.studentName || !['P', 'A', 'B', 'T'].includes(form) || !formOpen(form)) return;
     // The test is one try — a finished one needs a Teacher-PIN retake
     if (form === 'T' && testCompleted(this.studentName)) { applyFormLocks(this.studentName); return; }
     // The test waits for one finished review; the Teacher PIN can skip that for one student
@@ -829,8 +904,8 @@ const app = {
   },
 
   _showReviewPicker() {
-    const form = prompt('Choose a copy to look at:\n1 — Review A (hints)\n2 — Review B (no hints)\n3 — Test A (official)\n4 — Test B (retake)\n\nEnter 1, 2, 3 or 4:');
-    const map = { '1': 'A', '2': 'B', '3': 'T', '4': 'U' };
+    const form = prompt('Choose a copy to look at:\n1 — Practice\n2 — Review A (hints)\n3 — Review B (no hints)\n4 — Test A (official)\n5 — Test B (retake)\n\nEnter 1, 2, 3, 4 or 5:');
+    const map = { '1': 'P', '2': 'A', '3': 'B', '4': 'T', '5': 'U' };
     if (!map[form]) { alert('Invalid choice.'); reviewMode = false; return; }
     const mode = prompt('Choose review mode:\n1 — Manual (tap Next each question)\n2 — Auto-run (fully automatic)\n\nEnter 1 or 2:');
     if (mode !== '1' && mode !== '2') { alert('Invalid choice.'); reviewMode = false; return; }
@@ -849,8 +924,26 @@ const app = {
     document.getElementById('student-login-panel').classList.add('hidden');
   },
 
+  /* The question on screen: the "try one like it" twin while one is up, else the form's own question */
+  currentQ() {
+    return this.twin || (this.currentBank && this.currentBank[this.currentIndex]) || null;
+  },
+
+  /* TRY ONE LIKE IT — after a miss in Review A / B, line up the same kind of
+     question with new numbers. Not in the teacher's auto-run. */
+  _offerTwin() {
+    const bank = window['FORM_' + TWINS[this.currentForm]];
+    const orig = this.currentBank[this.currentIndex];
+    if (!this.lastMissed || !bank || !orig || reviewAutoRun) return false;
+    const t = bank.find(x => x.id.slice(1) === orig.id.slice(1));
+    if (!t) return false;
+    this.twin = { ...t, choices: [...t.choices].sort(() => Math.random() - 0.5), twinOf: orig.id };
+    this.lastMissed = false;
+    return true;
+  },
+
   _autoAnswer() {
-    const q = this.currentBank[this.currentIndex];
+    const q = this.currentQ();
     document.querySelectorAll('.answer-btn').forEach(btn => {
       if (btn.dataset.answer === q.answer) {
         this._selectChoice(q.answer, btn);
@@ -874,6 +967,8 @@ const app = {
     this.missedQuestions = [];
     this.currentIndex  = 0;
     this.questionLocked = false;   // a finished form leaves it set
+    this.twin          = null;
+    this.lastMissed    = false;
     this.timerSeconds  = 0;
 
     const rawBank = [...window['FORM_' + form]];
@@ -883,7 +978,8 @@ const app = {
       return { ...q, choices: shuffled };
     };
     this.currentBank = rawBank.map(shuffleQ);
-    shuffle(this.currentBank);
+    // Practice keeps its order: easiest first
+    if (!isPractice(form)) shuffle(this.currentBank);
 
     const banner = document.getElementById('review-mode-banner');
     if (banner) {
@@ -935,6 +1031,7 @@ const app = {
     this.timerSeconds   = saved.timerSeconds || 0;
     this.events = saved.events || [];
     this.startedAt = saved.startedAt || new Date().toISOString();
+    this.twin = null; this.lastMissed = false;   // a twin is a bonus question — it is not carried across a restart
     logEvent('resume');
     this.show('quiz-screen');
     this.startTimer();
@@ -948,7 +1045,7 @@ const app = {
       studentName:     this.studentName,
       currentForm:     this.currentForm,
       currentBank:     this.currentBank,
-      currentIndex:    this.questionLocked ? this.currentIndex + 1 : this.currentIndex, // answered → resume at the next one
+      currentIndex:    (this.questionLocked || this.twin) ? this.currentIndex + 1 : this.currentIndex, // answered (or on its twin) → resume at the next one
       score:           this.score,
       streak:          this.streak,
       missedQuestions: this.missedQuestions,
@@ -1126,10 +1223,13 @@ const app = {
   /* ── RENDER QUESTION ── */
   renderQuestion() {
     setPartBanner(this.currentForm);
-    const q     = this.currentBank[this.currentIndex];
+    const q     = this.currentQ();
     const total = this.currentBank.length;
 
     document.getElementById('progress-text').textContent = `Question ${this.currentIndex + 1} of ${total}`;
+    // "Try one like it" strip: shown only while a twin question is up
+    const twinNote = document.getElementById('twin-note');
+    if (twinNote) twinNote.classList.toggle('hidden', !this.twin);
     document.getElementById('score-text').textContent    = `${getFirstName(this.studentName)} · ${this.score}`;
     document.getElementById('progress-fill').style.width = `${(this.currentIndex / total) * 100}%`;
 
@@ -1144,6 +1244,9 @@ const app = {
     // The picture lives outside #question-text, so speakQuestion's
     // word-wrapping never touches it
     document.getElementById('q-visual').innerHTML = M2V.picHTML(q.pic);
+    // Word help buttons (not on the tests; the teacher's look at a test shows none either)
+    this.wordOpen = null;
+    this._renderWords();
 
     // Reset feedback / buttons
     const fb = document.getElementById('feedback');
@@ -1214,7 +1317,7 @@ const app = {
       wrap.appendChild(row);
     });
 
-    if (this.currentIndex > 0 && this.currentIndex % 5 === 0) submitScorePartial();
+    if (!this.twin && this.currentIndex > 0 && this.currentIndex % 5 === 0) submitScorePartial();
     this.saveProgress();
     this.startReadTimer();
   },
@@ -1240,14 +1343,23 @@ const app = {
     if (!this.selectedAnswer) return;
     this.questionLocked = true;
 
-    const q = this.currentBank[this.currentIndex];
+    const q = this.currentQ();
     const correct = this.selectedAnswer === q.answer;
+    const isTwin = !!this.twin;
 
-    if (correct) {
+    if (isTwin) {
+      // "Try one like it" never changes the score. The result rides in the event
+      // log (the dashboard reads it) and on the miss it follows (the end screen shows it).
+      logEvent('twin', Object.assign({ id: q.id, of: q.twinOf, ok: correct }, correct ? {} : { pick: this.selectedAnswer }));
+      const m = this.missedQuestions[this.missedQuestions.length - 1];
+      if (m && m.id === q.twinOf) m.twin = correct ? 'right' : 'wrong';
+    } else if (correct) {
       this.score++;
       this.streak++;
+      this.lastMissed = false;
     } else {
       this.streak = 0;
+      this.lastMissed = true;
       this.missedQuestions.push({ id: q.id, q: q.q, skill: (window.SKILLS || {})[q.id], yourAnswer: this.selectedAnswer, correct: q.answer, explanation: q.explanation || '' });
     }
 
@@ -1264,11 +1376,13 @@ const app = {
     const fb = document.getElementById('feedback');
     fb.className = 'feedback-box ' + (correct ? 'correct' : 'incorrect');
     fb.style.display = 'block';
+    // A wrong answer names the mistake (Marcos 10/10): each wrong choice stands for one slip
+    const slip = !correct && teach && q.slips ? q.slips[this.selectedAnswer] : null;
     fb.innerHTML = !teach
       ? (correct ? `✅ <strong>Correct!</strong>` : `❌ <strong>Not quite.</strong>`)
       : correct
-        ? `✅ <strong>Correct!</strong><br>${formatMathText(q.explanation)}`
-        : `❌ <strong>Not quite.</strong> The correct answer is: <strong>${formatMathText(q.answer)}</strong><br>${formatMathText(q.explanation)}`;
+        ? `✅ <strong>Correct!</strong>${isTwin ? ' You fixed it!' : ''}<br>${formatMathText(q.explanation)}`
+        : `❌ <strong>Not quite.</strong>${slip ? ` <span class="slip-note">${formatMathText(slip.say)}</span>` : ''} The correct answer is: <strong>${formatMathText(q.answer)}</strong><br>${formatMathText(q.explanation)}`;
 
     // Feedback read-aloud button
     const fbSpeakBtn = document.createElement('button');
@@ -1317,6 +1431,12 @@ const app = {
   /* ── NEXT QUESTION ── */
   nextQuestion() {
     stopActiveSpeech();
+    if (this.twin) {
+      this.twin = null;                       // the twin is done → on to the next question of the form
+    } else if (TWINS[this.currentForm] && this._offerTwin()) {
+      this.renderQuestion();                  // a miss in a review → try one like it
+      return;
+    }
     this.currentIndex++;
     if (this.currentIndex >= this.currentBank.length) {
       this._finishSession();
@@ -1327,6 +1447,7 @@ const app = {
 
   /* ── FINISH SESSION ── */
   _finishSession() {
+    this.twin = null;
     this.finishedAt = new Date().toISOString(); logEvent('finish');
     this.stopTimerEngine();
     localStorage.removeItem(STORAGE_KEY);
@@ -1373,7 +1494,7 @@ const app = {
     const againBtn = document.getElementById('end-again-btn');
     if (againBtn) againBtn.classList.toggle('hidden', reviewMode);
     document.getElementById('end-title').textContent =
-      isReview(this.currentForm) ? '🎉 Review Complete!' : '🎉 Test Complete!';
+      isPractice(this.currentForm) ? '🎉 Practice Complete!' : isReview(this.currentForm) ? '🎉 Review Complete!' : '🎉 Test Complete!';
 
     document.getElementById('final-score-sub').textContent =
       `${formLabel(attemptNum)}${attemptNum > 1 ? ' · Attempt ' + attemptNum : ''} · ${this.studentName}`;
@@ -1395,6 +1516,7 @@ const app = {
             <div style="margin:3px 0;">${formatMathText(m.q)}</div>
             <div>Your answer: <span style="color:var(--danger);">${formatMathText(m.yourAnswer)}</span>${showFix ? ` &nbsp; ✅ Correct: <strong style="color:var(--correct);">${formatMathText(m.correct)}</strong>` : ''}</div>
             ${showFix && m.explanation ? `<div style="margin-top:5px;font-size:0.85rem;color:#555;font-style:italic;">💡 ${formatMathText(m.explanation)}</div>` : ''}
+            ${m.twin ? `<div class="mi-twin ${m.twin}">🔁 Try one like it: ${m.twin === 'right' ? '✅ you got the next one right' : '❌ missed again — ask for help with this one'}</div>` : ''}
           </div>`
         ).join('');
     } else {
@@ -1404,10 +1526,31 @@ const app = {
     if (pct >= 70) startConfetti(pct);
   },
 
+  /* 📖 Word help: draw the buttons (and the open card) under the question */
+  _renderWords() {
+    const box = document.getElementById('q-words');
+    if (!box) return;
+    const q = this.currentQ();
+    box.innerHTML = q && !isTest(this.currentForm) ? wordChipsHTML(q, this.wordOpen) : '';
+  },
+
+  /* Tap a word button → its card opens (tap again → closes). Nothing is read until its 🔊 is tapped. */
+  showWord(key) {
+    const q = this.currentQ();
+    if (!q) return;
+    stopActiveSpeech();
+    const opening = this.wordOpen !== key;
+    this.wordOpen = opening ? key : null;
+    if (opening) { logEvent('word', { id: q.id, w: key }); this.saveProgress(); }
+    this._renderWords();
+    const focus = document.querySelector(opening ? '#q-words .word-speak-btn' : `#q-words .word-chip`);
+    if (focus) focus.focus();
+  },
+
   /* ── SPEAK QUESTION ── */
   /* 💡 Need a hint? → open the hint box (not read aloud until its own 🔊 is tapped) */
   showHint() {
-    const q = this.currentBank && this.currentBank[this.currentIndex];
+    const q = this.currentQ();
     const wrap = document.querySelector('#question-text .hint-wrap');
     if (!q || !q.hint || !wrap) return;
     this.hintShown = true;
@@ -1427,7 +1570,7 @@ const app = {
     activeSpeakBtn = qBtn;
     qBtn.textContent = '⏹';
 
-    const q = this.currentBank[this.currentIndex];
+    const q = this.currentQ();
     if (!q) return;
 
     // the hint box is read aloud after the question (class reads mostly at Level 1)
@@ -1786,7 +1929,7 @@ app.init();
 
 /* ── CLOSED-TO-STUDENTS LOCK ────────────────────────── */
 (function applyReviewLock() {
-  if (REVIEW_OPEN || TEST_OPEN) return;   // either part open → students can get in
+  if (PRACTICE_OPEN || REVIEW_OPEN || TEST_OPEN) return;   // any part open → students can get in
   const btn = document.querySelector('.lgs-btn');
   if (!btn) return;
   btn.disabled = true;

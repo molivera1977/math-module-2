@@ -12,6 +12,8 @@
    - work  : short lines of work, used for the rounding estimates
    A question can carry `pic` (shown under the question) and
    `explain` (shown in the feedback when the form teaches).
+   Under a question nothing gives the answer away: the columns end
+   in "?", the bar model's missing part is "?", no regroup marks.
 ═══════════════════════════════════════════════════════ */
 (function (root) {
   const fmt = n => Number(n).toLocaleString('en-US');
@@ -48,8 +50,14 @@
     return { n, A, B, R, marks, struck, res };
   }
 
-  function stackHTML(cfg) {
+  /* mode 'worked' (default) = the answer and the regrouping marks ·
+     'ask' = the problem set up in columns, "?" for the answer, no marks ·
+     'done' = the answer shown, no marks (a finished problem to look at) */
+  function stackHTML(cfg, mode) {
+    mode = mode || 'worked';
     const m = stackModel(cfg.a, cfg.b, cfg.op);
+    if (mode !== 'worked') { m.marks.fill(''); m.struck.fill(false); }
+    if (mode === 'ask') m.R = m.R.map((ch, i) => (i === m.n - 1 ? '?' : ' '));
     const sign = cfg.op === '+' ? '+' : '−';
     // the thousands digit (and the millions digit) carries the comma
     const cell = (ch, i, cls) => {
@@ -63,12 +71,13 @@
     const hasMarks = m.marks.some(Boolean);
     const marksRow = hasMarks
       ? `<tr class="m2-marks"><td class="m2-op"></td>${m.marks.map(v => `<td>${v}</td>`).join('')}</tr>` : '';
-    const said = `${fmt(cfg.a)} ${cfg.op === '+' ? 'plus' : 'minus'} ${fmt(cfg.b)} equals ${fmt(m.res)}, worked in columns`;
+    const said = `${fmt(cfg.a)} ${cfg.op === '+' ? 'plus' : 'minus'} ${fmt(cfg.b)}` +
+      (mode === 'ask' ? ', written in columns' : ` equals ${fmt(m.res)}, ${mode === 'done' ? 'written' : 'worked'} in columns`);
     return `<div class="m2-vis m2-stack-wrap"><table class="m2-stack" role="img" aria-label="${said}">` +
       marksRow +
       row(m.A, '', '', i => (m.struck[i] ? 'm2-struck' : '')) +
       row(m.B, 'm2-bot', sign) +
-      row(m.R, 'm2-ans', '') +
+      row(m.R, mode === 'ask' ? 'm2-ans m2-ask' : 'm2-ans', '') +
       `</table></div>`;
   }
 
@@ -81,7 +90,8 @@
     const ratio = Math.max(1, Math.min(2.4, cfg.l / cfg.w));
     const RW = Math.round(RH * ratio);
     const x0 = (W - RW) / 2, y0 = 48;
-    const lenLabel = `${cfg.l} ${cfg.unit}`, widLabel = `${cfg.w} ${cfg.unit}`;
+    // lenLabel / widLabel let a word card label the sides with words ("length", "width")
+    const lenLabel = cfg.lenLabel || `${cfg.l} ${cfg.unit}`, widLabel = cfg.widLabel || `${cfg.w} ${cfg.unit}`;
     const square = cfg.l === cfg.w;
     let s = `<rect x="${x0}" y="${y0}" width="${RW}" height="${RH}" rx="3" class="m2-rect-shape"/>`;
     if (cfg.name) {
@@ -104,32 +114,37 @@
   }
 
   /* ── BAR MODEL (parts on top, total on the bottom) ───
-     cfg = { total, part, answer } — the answer is the other part,
-     shown in green because this picture only appears in the explanation. */
+     cfg = { total, part, answer } — the answer is the other part, shown in
+     green in the explanation. With no answer (under a question) it is "?". */
   function barHTML(cfg) {
     const share = Math.max(28, Math.min(72, Math.round(cfg.part / cfg.total * 100)));
-    const said = `Bar model. The total is ${fmt(cfg.total)}. One part is ${fmt(cfg.part)}. The other part is ${fmt(cfg.answer)}.`;
+    const ask = cfg.answer == null;
+    const said = `Bar model. The total is ${fmt(cfg.total)}. One part is ${fmt(cfg.part)}. The other part is ${ask ? 'missing' : fmt(cfg.answer)}.`;
     return `<div class="m2-vis m2-bar" role="img" aria-label="${said}">` +
       `<div class="m2-bar-labs" aria-hidden="true"><span>Parts</span><span>Total</span></div>` +
       `<div class="m2-bar-box" aria-hidden="true">` +
         `<div class="m2-bar-top" style="grid-template-columns:${share}fr ${100 - share}fr">` +
-          `<div>${fmt(cfg.part)}</div><div class="m2-bar-ans">${fmt(cfg.answer)}</div></div>` +
+          `<div>${fmt(cfg.part)}</div><div class="${ask ? 'm2-bar-ask' : 'm2-bar-ans'}">${ask ? '?' : fmt(cfg.answer)}</div></div>` +
         `<div class="m2-bar-bot">${fmt(cfg.total)}</div>` +
       `</div></div>`;
   }
 
   /* ── LINES OF WORK (rounding, then adding or subtracting) ── */
-  function workHTML(lines) {
-    const said = lines.map(l => l.replace(/→/g, 'rounds to').replace(/−/g, 'minus').replace(/\+/g, 'plus').replace(/=/g, 'equals')).join('. ');
+  function workHTML(lines, plain) {     // plain = under a question: no "answer" line at the bottom
+    const said = lines.map(l => l.replace(/←/g, 'is below').replace(/→ \?/g, 'rounds to what').replace(/→/g, 'rounds to').replace(/−/g, 'minus').replace(/\+/g, 'plus').replace(/=/g, 'equals')).join('. ');
     return `<div class="m2-vis m2-work" role="img" aria-label="${esc(said)}">` +
-      lines.map((l, i) => `<div${i === lines.length - 1 ? ' class="m2-work-last"' : ''} aria-hidden="true">${esc(l)}</div>`).join('') +
+      lines.map((l, i) => `<div${!plain && lines.length > 1 && i === lines.length - 1 ? ' class="m2-work-last"' : ''} aria-hidden="true">${esc(l)}</div>`).join('') +
       `</div>`;
   }
 
-  /* Picture under the question */
+  /* Picture under the question — set up, never solved */
   function picHTML(pic) {
     if (!pic) return '';
-    return pic.rect ? rectSVG(pic.rect) : '';
+    if (pic.rect)  return rectSVG(pic.rect);
+    if (pic.stack) return stackHTML(pic.stack, pic.stack.done ? 'done' : 'ask');
+    if (pic.bar)   return barHTML({ total: pic.bar.total, part: pic.bar.part });
+    if (pic.work)  return workHTML(pic.work, true);
+    return '';
   }
 
   /* Pictures in the feedback: model first, then the worked columns */
