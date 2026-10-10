@@ -25,7 +25,8 @@
      stands for: data `slips`)
    - TRY ONE LIKE IT — after a miss in Review A / B the student gets one more
      question of the same kind (twin_x.js / twin_y.js); it never changes the score
-   - WORD HELP — a button under the question for each math word in it (data/words.js)
+   - WORD HELP — a button under the question for each math word in it (data/words.js);
+     Practice and Review A only
    Game keys mod2-practice / mod2a-review / mod2b-review / mod2t-test /
    mod2u-test, storage prefix mm2_. Pictures live in visuals.js.
    PIN: 9377 (Teacher override)
@@ -34,8 +35,9 @@
 /* ── CONFIG ─────────────────────────────────────────── */
 // Each part opens on its own. false = students locked out of that part;
 // Teacher Access still works. Set true to open.
-const PRACTICE_OPEN = false;   // Practice — the easy start (Step 1)
-const REVIEW_OPEN   = false;   // Review A (hints) and Review B (no hints)
+const PRACTICE_OPEN = true;    // Practice — the easy start (Step 1)
+const REVIEW_A_OPEN = true;    // Review A — hints and word help
+const REVIEW_B_OPEN = false;   // Review B — no hints, no word help (the last stop before the test)
 const TEST_OPEN     = false;   // Test A — official (Test B = retake, Teacher PIN)
 // Marcos 10/10: "the test must wait for at least one review. For a test to be
 // taken without a review being completed, it should need a teacher pin entry."
@@ -61,10 +63,16 @@ const isReview = form => form === 'A' || form === 'B';
 const isTest   = form => form === 'T' || form === 'U';
 // Practice and the reviews teach (answer + why + the worked picture + the mistake named); the tests do not
 const teaches = form => isReview(form) || isPractice(form);
+// Word help (a button per math word) is a support, so it comes off one step before the test:
+// Practice and Review A have it; Review B and the tests do not (Marcos 10/10).
+const wordHelp = form => form === 'P' || form === 'A';
 // "Try one like it": after a miss in a review, one more question of the same kind from this bank
 const TWINS = { A: 'X', B: 'Y' };
 const FORM_NAMES = { P: 'Practice', A: 'Review A', B: 'Review B', T: 'Test A', U: 'Test B (Retake)' };
-function formOpen(form) { return isPractice(form) ? PRACTICE_OPEN : isReview(form) ? REVIEW_OPEN : TEST_OPEN; }
+function formOpen(form) {
+  return isPractice(form) ? PRACTICE_OPEN : form === 'A' ? REVIEW_A_OPEN : form === 'B' ? REVIEW_B_OPEN : TEST_OPEN;
+}
+const ANY_OPEN = PRACTICE_OPEN || REVIEW_A_OPEN || REVIEW_B_OPEN || TEST_OPEN;
 /* Sheet / dashboard game key — one per form */
 function gameKey(form) {
   return { P: 'mod2-practice', A: 'mod2a-review', B: 'mod2b-review', T: 'mod2t-test', U: 'mod2u-test' }[form];
@@ -358,8 +366,8 @@ function speakHint(btn) {
 /* ── WORD HELP (Marcos 10/10) ──
    Each math word in the question gets a button under it. Tapping one opens a
    card: what the word means, an example, sometimes a picture, and its own 🔊.
-   Nothing opens or speaks on its own. Practice and the reviews only — the
-   tests measure whether the student knows these words. Every open is logged
+   Nothing opens or speaks on its own. Practice and Review A only (see wordHelp) —
+   Review B and the tests check whether the student knows these words. Every open is logged
    (event "word") so the dashboard can show who needed which word. */
 const WORD_MAX = 4;
 function wordsIn(q) {
@@ -742,7 +750,7 @@ const app = {
 
   /* ── READ ALOUD INTRO ── */
   showReadAloudIntro() {
-    if (!PRACTICE_OPEN && !REVIEW_OPEN && !TEST_OPEN) return;
+    if (!ANY_OPEN) return;
     document.getElementById('welcome-panel').classList.add('hidden');
     this.show('readaloud-screen');
     setTimeout(speakReadAloudIntro, 150);   // announces itself (show() just cancelled any speech)
@@ -1385,7 +1393,10 @@ const app = {
       ? (correct ? `✅ <strong>Correct!</strong>` : `❌ <strong>Not quite.</strong>`)
       : correct
         ? `✅ <strong>Correct!</strong>${isTwin ? ' You fixed it!' : ''}<br>${formatMathText(q.explanation)}`
-        : `❌ <strong>Not quite.</strong>${slip ? ` <span class="slip-note">${formatMathText(slip.say)}</span>` : ''} The correct answer is: <strong>${formatMathText(q.answer)}</strong><br>${formatMathText(q.explanation)}`;
+        // After a miss the screen stays short (Marcos 10/10 — too much on a page gets lost): the mistake,
+        // the right answer, then the worked picture. The general explanation is only the fallback for a
+        // wrong choice with no mistake note; a right answer still gets it.
+        : `❌ <strong>Not quite.</strong>${slip ? ` <span class="slip-note">${formatMathText(slip.say)}</span>` : ''} The correct answer is: <strong>${formatMathText(q.answer)}</strong>${slip ? '' : `<br>${formatMathText(q.explanation)}`}`;
 
     // Feedback read-aloud button
     const fbSpeakBtn = document.createElement('button');
@@ -1534,7 +1545,7 @@ const app = {
     const box = document.getElementById('q-words');
     if (!box) return;
     const q = this.currentQ();
-    box.innerHTML = q && !isTest(this.currentForm) ? wordChipsHTML(q, this.wordOpen) : '';
+    box.innerHTML = q && wordHelp(this.currentForm) ? wordChipsHTML(q, this.wordOpen) : '';
   },
 
   /* Tap a word button → its card opens (tap again → closes). Nothing is read until its 🔊 is tapped. */
@@ -1932,7 +1943,7 @@ app.init();
 
 /* ── CLOSED-TO-STUDENTS LOCK ────────────────────────── */
 (function applyReviewLock() {
-  if (PRACTICE_OPEN || REVIEW_OPEN || TEST_OPEN) return;   // any part open → students can get in
+  if (ANY_OPEN) return;   // any part open → students can get in
   const btn = document.querySelector('.lgs-btn');
   if (!btn) return;
   btn.disabled = true;
