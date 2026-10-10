@@ -11,8 +11,11 @@
      two times (a third needs the Teacher PIN)
    - TEST A = the official test — one attempt, right/wrong only, then
      locked. TEST B = the retake copy (new numbers), Teacher PIN only.
-     In the code Test A is form T (ids T01–T18) and Test B is form U
-     (ids U01–U18), so their ids never collide with Review A / B.
+     In the code Test A is form T (ids T01–T17) and Test B is form U
+     (ids U01–U17), so their ids never collide with Review A / B.
+   - 17 questions on each review and test (the "is the estimate reasonable?"
+     question was removed 10/10 — Marcos: "estimating is fine but the
+     reasonableness questions I don't care about"); Practice has 18.
    - Same kind of question in the same slot on all four forms, so the
      dashboard compares review → test skill by skill
    Help for students who are stuck (Marcos 10/10), none of it on the tests:
@@ -500,13 +503,13 @@ function applyFormLocks(name) {
     a.P === 0 ? '18 questions · the easy start · 💡 hints' : '🔁 Practice again any time');
   [['A', '📘', '💡 hints'], ['B', '📗', 'no hints']].forEach(([form, icon, kind]) => {
     setFormButton(form, `${icon} Review ${form}`,
-      a[form] === 0 ? `18 questions · ${kind} · 2 tries`
+      a[form] === 0 ? `17 questions · ${kind} · 2 tries`
       : a[form] === 1 ? `🔁 Try 2 of 2 · ${kind}`
       : '🔒 2 of 2 tries used');
     const btn = document.getElementById('btn-form-' + form);
     if (btn && formOpen(form) && a[form] >= 2) btn.classList.add('locked');
   });
-  setFormButton('T', '📝 Take Test A', '18 questions · one try',
+  setFormButton('T', '📝 Take Test A', '17 questions · one try',
     gate(reviewFinished(name)) ? '' : 'Finish Review A or Review B first');
   if (startCard) startCard.classList.toggle('hidden', done);
   if (doneCard)  doneCard.classList.toggle('hidden', !done || retakeUnlocked);

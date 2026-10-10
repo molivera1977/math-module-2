@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2d" />
+  <link rel="stylesheet" href="style.css?v=m2e" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -92,8 +92,8 @@
         <div class="step-card" id="review-card">
           <span class="step-label">Step 2 — Review</span>
           <div class="start-grid">
-            <button class="start-btn review-btn" id="btn-form-A" onclick="app.attemptStart('A')">📘 Review A<span class="form-btn-sub">18 questions · 💡 hints · 2 tries</span></button>
-            <button class="start-btn review-b-btn" id="btn-form-B" onclick="app.attemptStart('B')">📗 Review B<span class="form-btn-sub">18 questions · no hints · 2 tries</span></button>
+            <button class="start-btn review-btn" id="btn-form-A" onclick="app.attemptStart('A')">📘 Review A<span class="form-btn-sub">17 questions · 💡 hints · 2 tries</span></button>
+            <button class="start-btn review-b-btn" id="btn-form-B" onclick="app.attemptStart('B')">📗 Review B<span class="form-btn-sub">17 questions · no hints · 2 tries</span></button>
           </div>
           <p class="form-note">You will see the right answer and <strong>why</strong> after every question. 💡 Review A has a hint on every question. 🔁 Miss one? You get to try one like it.</p>
         </div>
@@ -102,7 +102,7 @@
         <div class="step-card" id="quiz-start-card">
           <span class="step-label">Step 3 — Test A</span>
           <div class="start-grid">
-            <button class="start-btn" id="btn-form-T" onclick="app.attemptStart('T')">📝 Take Test A<span class="form-btn-sub">18 questions · one try</span></button>
+            <button class="start-btn" id="btn-form-T" onclick="app.attemptStart('T')">📝 Take Test A<span class="form-btn-sub">17 questions · one try</span></button>
           </div>
         </div>
 
@@ -120,7 +120,7 @@
         <div class="step-card hidden" id="retake-card">
           <span class="step-label">Retake — Unlocked by Your Teacher</span>
           <div class="start-grid">
-            <button class="start-btn" id="btn-retake" onclick="app.startRetake()">🔁 Retake — Test B<span class="form-btn-sub">18 questions · new numbers</span></button>
+            <button class="start-btn" id="btn-retake" onclick="app.startRetake()">🔁 Retake — Test B<span class="form-btn-sub">17 questions · new numbers</span></button>
           </div>
         </div>
 
@@ -221,7 +221,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">📘 Step 2 — Review A and Review B</h3>
       </div>
-      <p class="dir-text">There are two reviews. Each one has 18 questions. Review A has a hint on every question. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. Review B has no hints. After each answer you will see the right answer and why. You will also see the work. If you miss a question, you get to try one like it. That extra question does not change your score. You can take each review two times.</p>
+      <p class="dir-text">There are two reviews. Each one has 17 questions. Review A has a hint on every question. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. Review B has no hints. After each answer you will see the right answer and why. You will also see the work. If you miss a question, you get to try one like it. That extra question does not change your score. You can take each review two times.</p>
     </div>
 
     <div class="dir-section attempts-dir">
@@ -229,7 +229,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">🔒 Step 3 — Test A</h3>
       </div>
-      <p class="dir-text">Finish Review A or Review B first. Then Test A opens. Test A is the real test. It has 18 questions. There are no hints and no word help. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
+      <p class="dir-text">Finish Review A or Review B first. Then Test A opens. Test A is the real test. It has 17 questions. There are no hints and no word help. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
     </div>
 
     <div class="dir-section read-dir">
@@ -289,7 +289,7 @@
     <!-- "Try one like it" — shown only on the extra question that follows a miss in a review -->
     <div id="twin-note" class="twin-note hidden" role="status">🔁 <strong>Try one like it.</strong> This one does not change your score.</div>
     <div class="q-badge">
-      <span class="q-badge-pill" id="progress-text">Question 1 of 18</span>
+      <span class="q-badge-pill" id="progress-text">Question 1 of 17</span>
       <span class="score-badge" id="score-text">Score: 0</span>
     </div>
 
@@ -408,16 +408,16 @@
 
 </div><!-- /.container -->
 
-<script src="data/form_p.js?v=m2d"></script>
-<script src="data/form_a.js?v=m2d"></script>
-<script src="data/form_b.js?v=m2d"></script>
-<script src="data/form_t.js?v=m2d"></script>
-<script src="data/form_u.js?v=m2d"></script>
-<script src="data/twin_x.js?v=m2d"></script>
-<script src="data/twin_y.js?v=m2d"></script>
-<script src="data/words.js?v=m2d"></script>
-<script src="data/skills.js?v=m2d"></script>
-<script src="visuals.js?v=m2d"></script>
-<script src="script.js?v=m2d"></script>
+<script src="data/form_p.js?v=m2e"></script>
+<script src="data/form_a.js?v=m2e"></script>
+<script src="data/form_b.js?v=m2e"></script>
+<script src="data/form_t.js?v=m2e"></script>
+<script src="data/form_u.js?v=m2e"></script>
+<script src="data/twin_x.js?v=m2e"></script>
+<script src="data/twin_y.js?v=m2e"></script>
+<script src="data/words.js?v=m2e"></script>
+<script src="data/skills.js?v=m2e"></script>
+<script src="visuals.js?v=m2e"></script>
+<script src="script.js?v=m2e"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
    Saved with every missed question so the teacher dashboard
    can rank skills (Focus next / Strongest) and roll them up
    to the standards: 4.NBT.4 (add, subtract, compare),
-   4.OA.3 (estimate, reasonable), 4.MD.3 (perimeter).
+   4.OA.3 (estimate by rounding), 4.MD.3 (perimeter).
    P = Practice · A, B = Review A, B · T, U = Test A, B ·
    X, Y = the "try one like it" twins of Review A, B.
 ═══════════════════════════════════════════════════════ */
@@ -43,8 +43,7 @@ window.SKILLS = {
   A14: "Perimeter expression",
   A15: "Perimeter of a rectangle",
   A16: "Comparison problems",
-  A17: "Is the estimate reasonable?",
-  A18: "Subtract whole numbers",
+  A17: "Subtract whole numbers",
 
   B01: "Add whole numbers",
   B02: "Comparison problems",
@@ -62,8 +61,7 @@ window.SKILLS = {
   B14: "Perimeter expression",
   B15: "Perimeter of a rectangle",
   B16: "Comparison problems",
-  B17: "Is the estimate reasonable?",
-  B18: "Subtract whole numbers",
+  B17: "Subtract whole numbers",
 
   T01: "Add whole numbers",
   T02: "Comparison problems",
@@ -81,8 +79,7 @@ window.SKILLS = {
   T14: "Perimeter expression",
   T15: "Perimeter of a rectangle",
   T16: "Comparison problems",
-  T17: "Is the estimate reasonable?",
-  T18: "Subtract whole numbers",
+  T17: "Subtract whole numbers",
 
   U01: "Add whole numbers",
   U02: "Comparison problems",
@@ -100,8 +97,7 @@ window.SKILLS = {
   U14: "Perimeter expression",
   U15: "Perimeter of a rectangle",
   U16: "Comparison problems",
-  U17: "Is the estimate reasonable?",
-  U18: "Subtract whole numbers",
+  U17: "Subtract whole numbers",
 
   X01: "Add whole numbers",
   X02: "Comparison problems",
@@ -119,8 +115,7 @@ window.SKILLS = {
   X14: "Perimeter expression",
   X15: "Perimeter of a rectangle",
   X16: "Comparison problems",
-  X17: "Is the estimate reasonable?",
-  X18: "Subtract whole numbers",
+  X17: "Subtract whole numbers",
 
   Y01: "Add whole numbers",
   Y02: "Comparison problems",
@@ -138,6 +133,5 @@ window.SKILLS = {
   Y14: "Perimeter expression",
   Y15: "Perimeter of a rectangle",
   Y16: "Comparison problems",
-  Y17: "Is the estimate reasonable?",
-  Y18: "Subtract whole numbers",
+  Y17: "Subtract whole numbers",
 };

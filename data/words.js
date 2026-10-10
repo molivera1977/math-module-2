@@ -59,7 +59,4 @@ window.WORDS = [
   { key: 'expression', word: 'expression', find: ['expression'],
     means: 'An expression is numbers and signs. It has no equal sign.',
     ex: '2 + 2 + 6 + 6 is an expression.' },
-  { key: 'reasonable', word: 'reasonable', find: ['reasonable'],
-    means: 'Reasonable means it makes sense.',
-    ex: 'You have 5 apples and eat 2. Is 3 left reasonable? Yes.' },
 ];
