@@ -25,10 +25,11 @@
 // Teacher Access still works. Set true to open.
 const REVIEW_OPEN   = false;   // Review A (hints) and Review B (no hints)
 const TEST_OPEN     = false;   // Test A — official (Test B = retake, Teacher PIN)
-// true = the test does not wait for a finished review (same as the rounding
-// sites since 10/8: parts can be done in any order — TEST_OPEN is the real lock).
-// false = the test opens after one finished review; the Teacher PIN can skip that.
-const ANY_ORDER     = true;
+// Marcos 10/10: "the test must wait for at least one review. For a test to be
+// taken without a review being completed, it should need a teacher pin entry."
+// false = Test A opens after ONE finished review (A or B) on this device; the
+// Teacher PIN lets one student skip that. true = no waiting (any order).
+const ANY_ORDER     = false;
 const gate = ready => ANY_ORDER || ready;
 const INSTRUCT_SECS = 20;
 const READ_SECS     = 12;
@@ -394,8 +395,8 @@ function testCompleted(name) {
   return a.T > 0 || a.U > 0;
 }
 
-/* With ANY_ORDER off, the test waits until one review form has been FINISHED
-   on this device. An unfinished review does not count. */
+/* The test waits until Review A or Review B has been FINISHED once on this
+   device. An unfinished review does not count. */
 function reviewFinished(name) {
   const a = getFormAttempts(name);
   return a.A > 0 || a.B > 0;
@@ -431,7 +432,7 @@ function applyFormLocks(name) {
     if (btn && formOpen(form) && a[form] >= 2) btn.classList.add('locked');
   });
   setFormButton('T', '📝 Take Test A', '18 questions · one try',
-    gate(reviewFinished(name)) ? '' : 'Finish a review first');
+    gate(reviewFinished(name)) ? '' : 'Finish Review A or Review B first');
   if (startCard) startCard.classList.toggle('hidden', done);
   if (doneCard)  doneCard.classList.toggle('hidden', !done || retakeUnlocked);
   if (retake)    retake.classList.toggle('hidden', !retakeUnlocked);
@@ -779,12 +780,12 @@ const app = {
     if (!this.studentName || !['A', 'B', 'T'].includes(form) || !formOpen(form)) return;
     // The test is one try — a finished one needs a Teacher-PIN retake
     if (form === 'T' && testCompleted(this.studentName)) { applyFormLocks(this.studentName); return; }
-    // (ANY_ORDER off) the test waits for one finished review; the Teacher PIN can skip that
+    // The test waits for one finished review; the Teacher PIN can skip that for one student
     if (form === 'T' && !gate(reviewFinished(this.studentName))) {
       this.showPinModal(
         '📘 Review First',
         `${getFirstName(this.studentName)}, finish Review A or Review B before you take the test. ` +
-        `Teachers: enter your PIN to let this student skip the review.`,
+        `Teachers: enter your PIN to let this student take Test A without a review.`,
         () => this.startSession('T')
       );
       return;
