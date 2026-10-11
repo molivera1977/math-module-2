@@ -314,8 +314,22 @@ function getFirstName(name) {
 }
 
 let hlTimer = null;
+/* ── LISTEN, THEN NEXT (Marcos 10/11: "these should be forced for them to hear like in Science… the kids
+   have to hear something before they can move on to the next item") ──
+   After a MISS in Practice A, Practice B or the Review, the Next button stays hidden until the mistake and
+   the right answer have been heard to the end. One big Listen button; stopping early does not count; a
+   second tap while it is speaking does nothing. A device that will not speak (no sound started within 4 s,
+   or the voice reports an error) gets a wait long enough to read it, then an "I read it" button.
+   Same rules and numbers as guide.js in science-starting-and-stopping. Not in the Test (it shows no
+   answer), not after a right answer, not in the teacher's look.
+   What it proves: the audio played to the end. Not that the child listened. */
+const LISTEN_START_WAIT = 4000;
+const listenDwellMs = words => Math.min(15000, Math.max(3000, words * 450));
+let listenJob = null;   // the forced listen now speaking, if any
+
 function stopActiveSpeech() {
   clearTimeout(hlTimer);
+  if (listenJob && !listenJob.settled) listenJob.abort();   // cut off before the end → it does not count
   window.speechSynthesis.cancel();
   document.querySelectorAll('.wrd.hl').forEach(e => e.classList.remove('hl'));
   if (activeSpeakBtn) { activeSpeakBtn.textContent = '🔊'; activeSpeakBtn = null; }
@@ -1282,7 +1296,8 @@ const app = {
         clearInterval(this.nextInterval);
         this.nextInterval = null;
         bar.classList.add('hidden');
-        document.getElementById('next-btn').classList.remove('hidden');
+        this.soakDone = true;
+        this._maybeShowNext();
       }
     }, 1000);
   },
@@ -1312,6 +1327,8 @@ const app = {
     // word-wrapping never touches it
     document.getElementById('q-visual').innerHTML = M2V.picHTML(q.pic);
     // Word help buttons (not on the tests; the teacher's look at a test shows none either)
+    this.mustHear = false;   // set after a miss on a part that teaches (see _armListen)
+    this.soakDone = false;
     this.wordOpen = null;
     this._renderWords();
 
@@ -1405,6 +1422,93 @@ const app = {
     }
   },
 
+  /* Next appears when the 8 second pause is over and — after a miss — the feedback has been heard */
+  _maybeShowNext() {
+    if (!this.soakDone || this.mustHear) return;
+    const next = document.getElementById('next-btn');
+    next.classList.remove('hidden');
+    next.scrollIntoView({ block: 'nearest' });
+  },
+
+  /* LISTEN, THEN NEXT — the big Listen button under the feedback after a miss (see LISTEN_START_WAIT) */
+  _armListen(fb, smallBtn, spans, text, qid) {
+    smallBtn.style.display = 'none';              // one thing to press
+    const row = document.createElement('div');
+    row.className = 'listen-row';
+    row.innerHTML = `<button type="button" class="listen-btn" id="listen-btn">🔊 Listen</button>` +
+      `<span class="listen-note" id="listen-note" aria-live="polite">Listen to the end. Then you can go on.</span>`;
+    fb.appendChild(row);
+    const btn = row.querySelector('#listen-btn'), note = row.querySelector('#listen-note');
+    const words = text.split(/\s+/).filter(Boolean).length;
+    const clearHl = () => spans.forEach(el => el.classList.remove('hl'));
+    const idle = () => { btn.classList.remove('playing'); btn.textContent = this.mustHear ? '🔊 Listen' : '🔊 Listen again'; };
+
+    const heard = how => {
+      if (!this.mustHear || !btn.isConnected) return;
+      this.mustHear = false;
+      logEvent('heard', { id: qid, how });      // how: 'voice' or 'read' (no sound on the device)
+      btn.disabled = false; btn.classList.add('heard'); btn.onclick = play; idle();
+      note.textContent = '✅ Done. You can go on.';
+      this.saveProgress();
+      this._maybeShowNext();
+    };
+
+    // This device will not speak: wait long enough to read it, then an "I read it" button
+    const noVoice = () => {
+      clearHl();
+      if (!this.mustHear) { idle(); return; }
+      btn.classList.remove('playing'); btn.disabled = true; btn.textContent = '⏳ Read it first…';
+      note.textContent = 'No sound here. Read it. Then tap the button.';
+      setTimeout(() => {
+        if (!this.mustHear || !btn.isConnected) return;
+        btn.disabled = false; btn.textContent = '✅ I read it';
+        btn.onclick = () => heard('read');
+      }, listenDwellMs(words));
+    };
+
+    const play = () => {
+      if (listenJob && !listenJob.settled && listenJob.btn === btn) return;   // a second tap must not cut the voice off
+      stopActiveSpeech();
+      if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') { noVoice(); return; }
+      const job = listenJob = { btn, settled: false, started: false, startTimer: null, watchdog: null };
+      const settle = () => { job.settled = true; clearTimeout(job.startTimer); clearTimeout(job.watchdog); clearHl(); };
+      const finish = ok => {
+        if (job.settled) return;
+        settle();
+        if (!btn.isConnected) return;
+        if (ok && this.mustHear) { heard('voice'); return; }
+        idle();
+        if (!ok && this.mustHear) note.textContent = 'It stopped early. Tap Listen. Hear it to the end.';
+      };
+      job.abort = () => finish(false);
+      btn.classList.add('playing'); btn.textContent = '🔊 Listening…';
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.9;
+      let hlIdx = 0;
+      u.onstart = () => {
+        job.started = true;
+        // Some voices never report that they finished. Generous on purpose (about 80 words a minute),
+        // so it can only fire after a real voice would be done.
+        job.watchdog = setTimeout(() => finish(true), words * 750 + 6000);
+      };
+      u.onboundary = e => {
+        if (e.name !== 'word') return;
+        clearHl();
+        if (spans[hlIdx]) spans[hlIdx].classList.add('hl');
+        hlIdx++;
+      };
+      u.onend = () => finish(true);
+      u.onerror = () => { if (job.settled) return; settle(); noVoice(); };
+      addHighlightFallback(u, spans);
+      job.startTimer = setTimeout(() => {
+        if (job.started || job.settled) return;      // no sound started: this device cannot speak
+        settle(); window.speechSynthesis.cancel(); noVoice();
+      }, LISTEN_START_WAIT);
+      window.speechSynthesis.speak(u);
+    };
+    btn.onclick = play;
+  },
+
   /* ── CONFIRM ANSWER ── */
   confirmAnswer() {
     if (!this.selectedAnswer) return;
@@ -1487,6 +1591,10 @@ const app = {
       window.speechSynthesis.speak(u);
     };
     fb.prepend(fbSpeakBtn);
+
+    // After a miss the student must HEAR the mistake and the right answer before Next shows
+    this.mustHear = teach && !correct && !reviewMode;
+    if (this.mustHear) this._armListen(fb, fbSpeakBtn, fbSpans, spokenFb, q.id);
 
     // Review: show the worked pictures (bar model · rectangle · columns)
     if (teach) fb.insertAdjacentHTML('beforeend', M2V.explainHTML(q.explain));
