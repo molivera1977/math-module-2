@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2g" />
+  <link rel="stylesheet" href="style.css?v=m2h" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -85,16 +85,16 @@
           <div class="start-grid">
             <button class="start-btn practice-a-btn" id="btn-form-P" onclick="app.attemptStart('P')">🌱 Practice A<span class="form-btn-sub">18 questions · the easy start · 💡 hints</span></button>
           </div>
-          <p class="form-note">Start here if you want an easy warm-up. The problems are <strong>already in columns</strong>.</p>
+          <p class="form-note">Start here. The problems are <strong>already in columns</strong>. Do it as many times as you like.</p>
         </div>
 
         <!-- Practice B — test-level questions with hints and word help; two times, then Teacher PIN -->
         <div class="step-card" id="practice-b-card">
           <span class="step-label">Step 2 — Practice B</span>
           <div class="start-grid">
-            <button class="start-btn practice-b-btn" id="btn-form-A" onclick="app.attemptStart('A')">🧭 Practice B<span class="form-btn-sub">17 questions · 💡 hints · 2 tries</span></button>
+            <button class="start-btn practice-b-btn" id="btn-form-A" onclick="app.attemptStart('A')">🧭 Practice B<span class="form-btn-sub">17 questions · 💡 hints</span></button>
           </div>
-          <p class="form-note">The same kinds of questions as the test. 💡 Hints and word help. 🔁 Miss one? You get to try one like it.</p>
+          <p class="form-note">The same kinds of questions as the test. 💡 Hints and word help. Get <strong>12 of 17</strong> right to open the Review.</p>
         </div>
 
         <!-- Review — no hints, no word help; two times, then Teacher PIN -->
@@ -103,7 +103,7 @@
           <div class="start-grid">
             <button class="start-btn review-btn" id="btn-form-B" onclick="app.attemptStart('B')">📘 Review<span class="form-btn-sub">17 questions · no hints · 2 tries</span></button>
           </div>
-          <p class="form-note">No hints this time. You still see the right answer and <strong>why</strong> after every question.</p>
+          <p class="form-note">No hints this time. Get <strong>12 of 17</strong> right to open the Test.</p>
         </div>
 
         <!-- Not taken yet → start the test -->
@@ -134,9 +134,9 @@
 
         <div style="background:#f0f4ff;border:2px solid #a9c4f5;border-radius:12px;
                      padding:12px 16px;margin-bottom:12px;font-size:0.88rem;color:#2c3e50;line-height:1.6;">
-          📋 <strong>Rules:</strong> Do Practice A as many times as you like.
-          You can take Practice B <strong>two times</strong> and the Review <strong>two times</strong>.
-          Finish Practice B or the Review before the test.
+          📋 <strong>Rules:</strong> Do Practice A and Practice B as many times as you like.
+          Finish Practice A. Get <strong>12 of 17</strong> on Practice B. Then the Review opens.
+          You can take the Review <strong>two times</strong>. Get <strong>12 of 17</strong> on the Review. Then the Test opens.
           You take the <strong>Test one time</strong>. After you finish, it locks.
           Only your teacher can unlock a retake.
         </div>
@@ -220,7 +220,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">🧭 Step 2 — Practice B</h3>
       </div>
-      <p class="dir-text">Practice B has 17 questions. They are like the test questions. Every question has a hint. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. That extra question does not change your score. You can take Practice B two times.</p>
+      <p class="dir-text">Practice B has 17 questions. They are like the test questions. Every question has a hint. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. That extra question does not change your score. You can do Practice B as many times as you like. Get 12 of 17 right to open the Review.</p>
     </div>
 
     <div class="dir-section words-dir">
@@ -236,7 +236,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">📘 Step 3 — Review</h3>
       </div>
-      <p class="dir-text">The Review has 17 questions. There are no hints and no word help. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. You can take the Review two times.</p>
+      <p class="dir-text">The Review opens after two things. First, finish Practice A. Second, get 12 of 17 right on Practice B. The Review has 17 questions. There are no hints and no word help. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. You can take the Review two times. Get 12 of 17 right to open the Test.</p>
     </div>
 
     <div class="dir-section attempts-dir">
@@ -244,7 +244,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">🔒 Step 4 — The Test</h3>
       </div>
-      <p class="dir-text">Finish Practice B or the Review first. Then the Test opens. It has 17 questions. There are no hints and no word help. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
+      <p class="dir-text">Get 12 of 17 right on the Review first. Then the Test opens. It has 17 questions. There are no hints and no word help. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
     </div>
 
     <div class="dir-section read-dir">
@@ -423,16 +423,16 @@
 
 </div><!-- /.container -->
 
-<script src="data/form_p.js?v=m2g"></script>
-<script src="data/form_a.js?v=m2g"></script>
-<script src="data/form_b.js?v=m2g"></script>
-<script src="data/form_t.js?v=m2g"></script>
-<script src="data/form_u.js?v=m2g"></script>
-<script src="data/twin_x.js?v=m2g"></script>
-<script src="data/twin_y.js?v=m2g"></script>
-<script src="data/words.js?v=m2g"></script>
-<script src="data/skills.js?v=m2g"></script>
-<script src="visuals.js?v=m2g"></script>
-<script src="script.js?v=m2g"></script>
+<script src="data/form_p.js?v=m2h"></script>
+<script src="data/form_a.js?v=m2h"></script>
+<script src="data/form_b.js?v=m2h"></script>
+<script src="data/form_t.js?v=m2h"></script>
+<script src="data/form_u.js?v=m2h"></script>
+<script src="data/twin_x.js?v=m2h"></script>
+<script src="data/twin_y.js?v=m2h"></script>
+<script src="data/words.js?v=m2h"></script>
+<script src="data/skills.js?v=m2h"></script>
+<script src="visuals.js?v=m2h"></script>
+<script src="script.js?v=m2h"></script>
 </body>
 </html>

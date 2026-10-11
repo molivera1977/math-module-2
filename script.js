@@ -9,8 +9,8 @@
    terminology across all our math tests and quizzes. Practice A, Practice B,
    Review, and Test"):
      Step 1  PRACTICE A  form P  easy start: smaller numbers, in order, problem in columns, hints, word help; unlimited
-     Step 2  PRACTICE B  form A  test-level questions with hints and word help; two times (a third needs the Teacher PIN)
-     Step 3  REVIEW      form B  test-level, no hints, no word help; two times (a third needs the Teacher PIN)
+     Step 2  PRACTICE B  form A  test-level questions with hints and word help; unlimited; 70% opens the Review
+     Step 3  REVIEW      form B  test-level, no hints, no word help; two times (a third needs the Teacher PIN); 70% opens the Test
      Step 4  TEST        form T  one attempt, right/wrong only, then locked · form U = the retake (new numbers, Teacher PIN)
    The form letters, ids (P01… A01… B01… T01… U01…) and game keys did not change when the
    parts were renamed on 10/10 (Practice → Practice A, Review A → Practice B, Review B → Review,
@@ -39,12 +39,16 @@ const PRACTICE_A_OPEN = true;    // Step 1 · Practice A — the easy start
 const PRACTICE_B_OPEN = true;    // Step 2 · Practice B — hints and word help
 const REVIEW_OPEN     = false;   // Step 3 · Review — no hints, no word help (the last stop before the test)
 const TEST_OPEN       = false;   // Step 4 · Test — official (its retake needs the Teacher PIN)
-// Marcos 10/10: "the test must wait for at least one review. For a test to be
-// taken without a review being completed, it should need a teacher pin entry."
-// false = the Test opens after ONE finished Practice B or Review on this device; the
-// Teacher PIN lets one student skip that. true = no waiting (any order).
+// THE GATES — Marcos 10/10: "Let's make Practice A and B unlimited, Review requires completing
+// Practice A and Practice B and a 70% on Practice B, Test requires 70 % on Review."
+//   Practice A, Practice B  as many times as they like
+//   Review   opens after a finished Practice A + a finished Practice B with 70% or better (best try counts)
+//   Test     opens after a Review with 70% or better (best try counts)
+// The Teacher PIN lets one student past a gate (his rule from earlier the same day: skipping a step
+// "should need a teacher pin entry"). Scores are remembered on the device, like everything else here.
+// ANY_ORDER true = no gates at all (every open part can be started).
 const ANY_ORDER     = false;
-const gate = ready => ANY_ORDER || ready;
+const PASS_PCT      = 70;
 const INSTRUCT_SECS = 20;
 const READ_SECS     = 12;
 const NEXT_SECS     = 8;
@@ -471,18 +475,44 @@ function getFormAttempts(name) {
 
 /* The Test is one attempt. Once it is finished on this device the student sees
    "Test Already Completed"; a retake (form U) needs the Teacher PIN every
-   time. Each review can be taken two times; after that only a Teacher PIN
-   unlocks another try (same as the MM1 Review). */
+   time. The Review can be taken two times; after that only a Teacher PIN
+   unlocks another try. Practice A and Practice B have no limit. */
 function testCompleted(name) {
   const a = getFormAttempts(name);
   return a.T > 0 || a.U > 0;
 }
 
-/* The Test waits until Practice B or the Review has been FINISHED once on this
-   device. An unfinished review does not count. */
-function reviewFinished(name) {
+/* ── THE GATES (see PASS_PCT) ── */
+/* This student's best finished attempt at a part on this device, or null */
+function bestScore(name, form) {
+  const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
+  return scores.filter(s => s.name === name && s.form === form && s.done && s.total > 0)
+    .reduce((best, s) => (!best || s.score / s.total > best.score / best.total ? s : best), null);
+}
+function passed(name, form) {
+  const best = bestScore(name, form);
+  return !!best && best.score / best.total * 100 >= PASS_PCT;
+}
+/* How many right it takes: 70% of 17 questions = 12 */
+function needFor(form) {
+  return Math.ceil(PASS_PCT / 100 * window['FORM_' + form].length);
+}
+/* Why the Review is not open for this student yet ('' = it is open) */
+function reviewWait(name) {
+  if (ANY_ORDER) return '';
   const a = getFormAttempts(name);
-  return a.A > 0 || a.B > 0;
+  if (a.P === 0) return 'Finish Practice A first';
+  if (a.A === 0) return 'Finish Practice B first';
+  if (!passed(name, 'A')) return `Get ${needFor('A')} of ${window.FORM_A.length} on Practice B first`;
+  return '';
+}
+/* Why the Test is not open for this student yet ('' = it is open) */
+function testWait(name) {
+  if (ANY_ORDER) return '';
+  const a = getFormAttempts(name);
+  if (a.B === 0) return 'Finish the Review first';
+  if (!passed(name, 'B')) return `Get ${needFor('B')} of ${window.FORM_B.length} on the Review first`;
+  return '';
 }
 
 /* A form that is not open yet shows a gray "Not open yet" button. */
@@ -508,16 +538,25 @@ function applyFormLocks(name) {
   const retake    = document.getElementById('retake-card');
   setFormButton('P', '🌱 Practice A',
     a.P === 0 ? '18 questions · the easy start · 💡 hints' : '🔁 Practice again any time');
-  [['A', '🧭 Practice B', '💡 hints'], ['B', '📘 Review', 'no hints']].forEach(([form, label, kind]) => {
-    setFormButton(form, label,
-      a[form] === 0 ? `17 questions · ${kind} · 2 tries`
-      : a[form] === 1 ? `🔁 Try 2 of 2 · ${kind}`
-      : '🔒 2 of 2 tries used');
-    const btn = document.getElementById('btn-form-' + form);
-    if (btn && formOpen(form) && a[form] >= 2) btn.classList.add('locked');
-  });
-  setFormButton('T', '📝 Take the Test', '17 questions · one try',
-    gate(reviewFinished(name)) ? '' : 'Finish Practice B or the Review first');
+  // Practice B: no limit. After a try the button shows the best score and what opens the Review.
+  const bestB = bestScore(name, 'A');
+  setFormButton('A', '🧭 Practice B',
+    !bestB ? '17 questions · 💡 hints'
+    : passed(name, 'A') ? `✅ Best: ${bestB.score} of ${bestB.total} · practice again any time`
+    : `🔁 Best: ${bestB.score} of ${bestB.total} · get ${needFor('A')} to open the Review`);
+  // Review: waits for Practice A + 70% on Practice B; two tries, then the Teacher PIN
+  const bestR = bestScore(name, 'B');
+  const reviewWhy = reviewWait(name);
+  setFormButton('B', '📘 Review',
+    a.B === 0 ? '17 questions · no hints · 2 tries'
+    : a.B >= 2 ? `🔒 2 of 2 tries used · best: ${bestR.score} of ${bestR.total}`
+    : passed(name, 'B') ? `✅ Best: ${bestR.score} of ${bestR.total} · 1 try left`
+    : `🔁 Try 2 of 2 · best: ${bestR.score} of ${bestR.total} · get ${needFor('B')} to open the Test`,
+    reviewWhy);
+  const reviewBtn = document.getElementById('btn-form-B');
+  if (reviewBtn && formOpen('B') && a.B >= 2) reviewBtn.classList.add('locked');
+  // Test: waits for 70% on the Review
+  setFormButton('T', '📝 Take the Test', '17 questions · one try', testWait(name));
   if (startCard) startCard.classList.toggle('hidden', done);
   if (doneCard)  doneCard.classList.toggle('hidden', !done || retakeUnlocked);
   if (retake)    retake.classList.toggle('hidden', !retakeUnlocked);
@@ -865,21 +904,23 @@ const app = {
     if (!this.studentName || !['P', 'A', 'B', 'T'].includes(form) || !formOpen(form)) return;
     // The test is one try — a finished one needs a Teacher-PIN retake
     if (form === 'T' && testCompleted(this.studentName)) { applyFormLocks(this.studentName); return; }
-    // The test waits for one finished review; the Teacher PIN can skip that for one student
-    if (form === 'T' && !gate(reviewFinished(this.studentName))) {
+    // The gates: the Review waits for Practice A + 70% on Practice B; the Test waits for 70% on the Review.
+    // The Teacher PIN lets this one student past.
+    const why = form === 'T' ? testWait(this.studentName) : form === 'B' ? reviewWait(this.studentName) : '';
+    if (why) {
       this.showPinModal(
         '📘 Not Yet',
-        `${getFirstName(this.studentName)}, finish Practice B or the Review before you take the test. ` +
-        `Teachers: enter your PIN to let this student take the test now.`,
-        () => this.startSession('T')
+        `${getFirstName(this.studentName)}: ${why.charAt(0).toLowerCase() + why.slice(1)}. ` +
+        `Teachers: enter your PIN to let this student ${form === 'T' ? 'take the test' : 'start the Review'} now.`,
+        () => this.startSession(form)
       );
       return;
     }
-    // Practice B and the Review are two tries each; each extra try needs the Teacher PIN
-    if (isReview(form) && getFormAttempts(this.studentName)[form] >= 2) {
+    // The Review is two tries; each extra try needs the Teacher PIN. (Practice A and B have no limit.)
+    if (form === 'B' && getFormAttempts(this.studentName).B >= 2) {
       this.showPinModal(
-        `🔓 Unlock ${form === 'A' ? 'Practice B' : 'the Review'}`,
-        `${getFirstName(this.studentName)} has already taken ${form === 'A' ? 'Practice B' : 'the Review'} two times. Enter Teacher PIN to allow an extra try.`,
+        '🔓 Unlock the Review',
+        `${getFirstName(this.studentName)} has already taken the Review two times. Enter Teacher PIN to allow an extra try.`,
         () => this.startSession(form)
       );
       return;
