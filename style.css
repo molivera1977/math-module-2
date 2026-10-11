@@ -111,12 +111,15 @@ h1 {
 
 .form-btn-sub { font-size: 0.65em; font-weight: normal; opacity: 0.88; }
 
-/* Review Form A is blue, Review Form B is teal, the test keeps the site's violet */
+/* Same colors as the rounding sites: Practice A green, Practice B teal, Review blue; the Test keeps the site's violet */
 .start-btn.review-btn { background: #2e86c1; box-shadow: 0 5px 0 #1f618d; }
 .start-btn.review-btn:hover { box-shadow: 0 8px 0 #1f618d; }
 #review-card .step-label { color: #2e86c1; }
-.start-btn.review-b-btn { background: #16a085; box-shadow: 0 5px 0 #0e6655; }
-.start-btn.review-b-btn:hover { box-shadow: 0 8px 0 #0e6655; }
+.start-btn.practice-b-btn { background: #16a085; box-shadow: 0 5px 0 #0e6655; }
+.start-btn.practice-b-btn:hover { box-shadow: 0 8px 0 #0e6655; }
+#practice-b-card .step-label { color: #138d75; }
+.practice-b-dir    { background: #e8f8f5; border-color: #76d7c4; }
+.practice-b-dir h3 { color: #117864; }
 .form-note { margin: 4px 0 0; text-align: center; font-size: 0.86rem; color: #555; }
 
 .score-btn {
@@ -666,9 +669,9 @@ button.answer-btn.incorrect { background: #f8d7da; border-color: #dc3545; color:
   box-shadow: 0 4px 0 rgba(0,0,0,.15);
 }
 .part-banner:empty { display: none; }
-.part-banner.pb-practice   { background: #1e8449; }
+.part-banner.pb-practice-a { background: #1e8449; }
+.part-banner.pb-practice-b { background: #117a65; }
 .part-banner.pb-review     { background: #2471a3; }
-.part-banner.pb-review-b   { background: #117a65; }
 .part-banner.pb-quiz       { background: #3b2491; }
 .part-banner .pb-teacher   { font-size: .8rem; font-weight: 700; opacity: .9; }
 
@@ -729,11 +732,11 @@ button.answer-btn.incorrect { background: #f8d7da; border-color: #dc3545; color:
 
 /* ══ HELP FOR STUDENTS WHO ARE STUCK (10/10) ═════════════════ */
 /* Step 1 — Practice (green, like the rounding sites' Practice A) */
-.start-btn.practice-btn { background: #27ae60; box-shadow: 0 5px 0 #1e8449; }
-.start-btn.practice-btn:hover { box-shadow: 0 8px 0 #1e8449; }
-#practice-card .step-label { color: #1e8449; }
-.practice-dir    { background: #eafaf1; border-color: #82e0aa; }
-.practice-dir h3 { color: #1e8449; }
+.start-btn.practice-a-btn { background: #27ae60; box-shadow: 0 5px 0 #1e8449; }
+.start-btn.practice-a-btn:hover { box-shadow: 0 8px 0 #1e8449; }
+#practice-a-card .step-label { color: #1e8449; }
+.practice-a-dir    { background: #eafaf1; border-color: #82e0aa; }
+.practice-a-dir h3 { color: #1e8449; }
 .words-dir    { background: #eef6ff; border-color: #9cc5f0; }
 .words-dir h3 { color: #1f5f99; }
 
