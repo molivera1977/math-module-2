@@ -35,6 +35,7 @@
 /* ── CONFIG ─────────────────────────────────────────── */
 // Each part opens on its own. false = students locked out of that part;
 // Teacher Access still works. Set true to open.
+const SHARE_MODE    = !!window.SHARE_MODE;   // set by share.js — a visitor's link, never a student's
 const PRACTICE_A_OPEN = true;    // Step 1 · Practice A — the easy start
 const PRACTICE_B_OPEN = true;    // Step 2 · Practice B — hints and word help
 const REVIEW_OPEN     = false;   // Step 3 · Review — no hints, no word help (the last stop before the test)
@@ -76,7 +77,7 @@ const wordHelp = form => form === 'P' || form === 'A';
 const TWINS = { A: 'X', B: 'Y' };
 const FORM_NAMES = { P: 'Practice A', A: 'Practice B', B: 'Review', T: 'Test', U: 'Test (Retake)' };
 function formOpen(form) {
-  return isPractice(form) ? PRACTICE_A_OPEN : form === 'A' ? PRACTICE_B_OPEN : form === 'B' ? REVIEW_OPEN : TEST_OPEN;
+  return SHARE_MODE || (isPractice(form) ? PRACTICE_A_OPEN : form === 'A' ? PRACTICE_B_OPEN : form === 'B' ? REVIEW_OPEN : TEST_OPEN);
 }
 const ANY_OPEN = PRACTICE_A_OPEN || PRACTICE_B_OPEN || REVIEW_OPEN || TEST_OPEN;
 /* Sheet / dashboard game key — one per form */
@@ -515,7 +516,7 @@ function needFor(form) {
 /* Why Practice B is not open for this student yet ('' = it is open).
    A Practice B that was already started before this gate existed can still be resumed and finished. */
 function practiceBWait(name) {
-  if (ANY_ORDER) return '';
+  if (ANY_ORDER || SHARE_MODE) return '';
   const a = getFormAttempts(name);
   if (!a.P) return 'Finish Practice A first';
   if (!passed(name, 'P')) return `Get ${needFor('P')} of ${window.FORM_P.length} on Practice A first`;
@@ -523,7 +524,7 @@ function practiceBWait(name) {
 }
 /* Why the Review is not open for this student yet ('' = it is open) */
 function reviewWait(name) {
-  if (ANY_ORDER) return '';
+  if (ANY_ORDER || SHARE_MODE) return '';
   const a = getFormAttempts(name);
   if (a.P === 0) return 'Finish Practice A first';
   if (a.A === 0) return 'Finish Practice B first';
@@ -532,7 +533,7 @@ function reviewWait(name) {
 }
 /* Why the Test is not open for this student yet ('' = it is open) */
 function testWait(name) {
-  if (ANY_ORDER) return '';
+  if (ANY_ORDER || SHARE_MODE) return '';
   const a = getFormAttempts(name);
   if (a.B === 0) return 'Finish the Review first';
   if (!passed(name, 'B')) return `Get ${needFor('B')} of ${window.FORM_B.length} on the Review first`;
@@ -817,7 +818,7 @@ const app = {
 
   /* ── READ ALOUD INTRO ── */
   showReadAloudIntro() {
-    if (!ANY_OPEN) return;
+    if (!SHARE_MODE && (!ANY_OPEN)) return;
     document.getElementById('welcome-panel').classList.add('hidden');
     this.show('readaloud-screen');
     setTimeout(speakReadAloudIntro, 150);   // announces itself (show() just cancelled any speech)
@@ -863,6 +864,18 @@ const app = {
     this.show('start-screen');
     document.getElementById('welcome-panel').classList.add('hidden');
     document.getElementById('student-login-panel').classList.remove('hidden');
+    if (SHARE_MODE) this._shareSignIn();
+  },
+
+  /* Shared preview: no roster, no student number — straight to the parts. */
+  _shareSignIn() {
+    loggedInName     = 'Visitor';
+    this.studentName = 'Visitor';
+    const loginCard = document.getElementById('login-step-card');
+    if (loginCard) loginCard.classList.add('hidden');
+    document.getElementById('form-select-section').classList.remove('hidden');
+    applyFormLocks(this.studentName);
+    this.checkResume();
   },
 
   /* ── NAME SELECT ── */
@@ -1636,11 +1649,11 @@ const app = {
     const date  = new Date();
 
     const scores   = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
-    const prevDone = reviewMode ? 0 : scores.filter(s => s.name === this.studentName && s.form === this.currentForm && s.done).length;
+    const prevDone = (reviewMode || SHARE_MODE) ? 0 : scores.filter(s => s.name === this.studentName && s.form === this.currentForm && s.done).length;
     const attemptNum = prevDone + 1;
     this.currentAttemptNum = attemptNum;
 
-    if (!reviewMode) {
+    if (!reviewMode && !SHARE_MODE) {
       scores.push({
         name:    this.studentName,
         form:    this.currentForm,
@@ -1674,8 +1687,9 @@ const app = {
     document.getElementById('end-title').textContent =
       `🎉 ${isTest(this.currentForm) ? 'Test' : FORM_NAMES[this.currentForm]} Complete!`;
 
-    document.getElementById('final-score-sub').textContent =
-      `${formLabel(attemptNum)}${attemptNum > 1 ? ' · Attempt ' + attemptNum : ''} · ${this.studentName}`;
+    document.getElementById('final-score-sub').textContent = SHARE_MODE
+      ? `${FORM_NAMES[this.currentForm]} · Shared preview — this score was not saved`
+      : `${formLabel(attemptNum)}${attemptNum > 1 ? ' · Attempt ' + attemptNum : ''} · ${this.studentName}`;
     document.getElementById('final-msg').textContent = msg;
 
     const pctEl = document.getElementById('final-percent');
@@ -1684,7 +1698,7 @@ const app = {
 
     const missedSec = document.getElementById('missed-section');
     // The review shows the fix for every miss; the test shows the pick only.
-    const showFix = teaches(this.currentForm) || reviewMode;
+    const showFix = teaches(this.currentForm) || reviewMode || SHARE_MODE;   // a visitor sees every fix, the test included
     if (this.missedQuestions.length) {
       missedSec.classList.remove('hidden');
       document.getElementById('missed-items').innerHTML =
@@ -2107,7 +2121,7 @@ app.init();
 
 /* ── CLOSED-TO-STUDENTS LOCK ────────────────────────── */
 (function applyReviewLock() {
-  if (ANY_OPEN) return;   // any part open → students can get in
+  if (SHARE_MODE || ANY_OPEN) return;   // any part open → students can get in
   const btn = document.querySelector('.lgs-btn');
   if (!btn) return;
   btn.disabled = true;
