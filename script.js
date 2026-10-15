@@ -2000,6 +2000,12 @@ const app = {
     this.checkResume();
   },
 
+  /* Marcos 10/14: "Back to …" keeps a signed-in student signed in; only Sign Out starts over. */
+  backToMenu() {
+    if (!this.studentName) { this.restart(); return; }
+    this.tryAgain();
+  },
+
   restart() {
     stopConfetti();
     this.stopTimerEngine();

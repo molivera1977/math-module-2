@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2k" />
+  <link rel="stylesheet" href="style.css?v=m2k-nav1" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -368,8 +368,10 @@
       <div id="missed-items"></div>
     </div>
     <div class="end-btns">
-      <button class="start-btn" id="end-again-btn" onclick="app.tryAgain()">↩️ Back to the Steps</button>
-      <button class="start-btn" style="background:#27ae60;box-shadow:0 5px 0 #1e8449;" onclick="app.restart()">🏠 Home</button>
+      <button class="start-btn" id="end-again-btn" onclick="app.tryAgain()">↩️ Back to the Steps<span class="form-btn-sub">Pick your next step. You stay signed in.</span></button>
+    </div>
+    <div class="signout-row" style="text-align:center;margin-top:14px;">
+      <button class="signout-btn" onclick="app.restart()">🚪 Sign Out<span class="signout-sub">Only when you are all done. You will go back to the start.</span></button>
     </div>
     <div id="review-next-btn" class="hidden" style="text-align:center;margin-top:12px;">
       <button class="start-btn" style="background:#8e44ad;box-shadow:0 5px 0 #6c3483;" onclick="app._showReviewPicker()">🔍 Review Another Form</button>
@@ -404,7 +406,7 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;">
-      <button class="action-btn" style="background:#7f8c8d;box-shadow:0 4px 0 #566573;" onclick="app.restart()">🏠 Home</button>
+      <button class="action-btn" style="background:#7f8c8d;box-shadow:0 4px 0 #566573;" onclick="app.backToMenu()">↩️ Back to the Steps</button>
     </div>
     <div id="teacher-score-btns" style="display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
       <button class="action-btn" style="background:#c0392b;box-shadow:0 4px 0 #922b21;" onclick="app.clearScores()">🗑️ Clear History</button>
@@ -443,6 +445,6 @@
 <script src="data/words.js?v=m2k"></script>
 <script src="data/skills.js?v=m2k"></script>
 <script src="visuals.js?v=m2k"></script>
-<script src="script.js?v=m2k-sh2-hl2"></script>
+<script src="script.js?v=m2k-sh2-hl2-nav1"></script>
 </body>
 </html>

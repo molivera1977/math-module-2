@@ -778,3 +778,9 @@ button.answer-btn.incorrect { background: #f8d7da; border-color: #dc3545; color:
 .listen-note { font-size: 0.95rem; font-weight: 700; color: #6b3d00; }
 .listen-dir    { background: #fdecea; border-color: #f1a9a0; }
 .listen-dir h3 { color: #922b21; }
+
+/* Finish screen (Marcos 10/14): Sign Out is quieter than the main buttons, and each button says where it goes */
+.signout-btn { background:none; border:2px solid #ccc; border-radius:10px; color:#666; font-family:inherit;
+               font-size:0.95rem; font-weight:700; padding:8px 16px; cursor:pointer; }
+.signout-btn:hover { border-color:#999; color:#333; }
+.signout-sub { display:block; font-size:0.8rem; font-weight:600; color:#888; margin-top:2px; }
