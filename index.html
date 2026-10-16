@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2k-nav1" />
+  <link rel="stylesheet" href="style.css?v=m2l" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -76,21 +76,30 @@
         </div>
       </div>
 
-      <!-- STEP 1 — PRACTICE A (form P) · STEP 2 — PRACTICE B (form A) · STEP 3 — REVIEW (form B) · STEP 4 — THE TEST (form T; Teacher-PIN retake = form U) -->
+      <!-- STEP 1 — WARM-UP (form W) · STEP 2 — PRACTICE A (form P) · STEP 3 — PRACTICE B (form A) · STEP 4 — REVIEW (form B) · STEP 5 — THE TEST (form T; Teacher-PIN retake = form U) -->
       <div id="form-select-section" class="hidden">
 
-        <!-- Practice A — the easy start: in order, columns shown, a hint on every question; as many tries as they like -->
-        <div class="step-card" id="practice-a-card">
-          <span class="step-label">Step 1 — Practice A</span>
+        <!-- Warm-Up (Marcos 10/15) — watch a worked example (must hear it), then step by step, then 12 easier questions -->
+        <div class="step-card" id="warm-up-card">
+          <span class="step-label">Step 1 — Warm-Up</span>
           <div class="start-grid">
-            <button class="start-btn practice-a-btn" id="btn-form-P" onclick="app.attemptStart('P')">🌱 Practice A<span class="form-btn-sub">18 questions · the easy start · 💡 hints</span></button>
+            <button class="start-btn warm-up-btn" id="btn-form-W" onclick="app.attemptStart('W')">🔥 Warm-Up<span class="form-btn-sub">watch, then try · 12 questions · 💡 hints</span></button>
           </div>
-          <p class="form-note">Start here. The problems are <strong>already in columns</strong>. Get <strong>13 of 18</strong> right to open Practice B.</p>
+          <p class="form-note">Start here. Watch and listen. Then try it one step at a time. Get <strong>9 of 12</strong> right to open Practice A.</p>
+        </div>
+
+        <!-- Practice A — in order, columns shown, a hint on every question (read aloud by itself); as many tries as they like -->
+        <div class="step-card" id="practice-a-card">
+          <span class="step-label">Step 2 — Practice A</span>
+          <div class="start-grid">
+            <button class="start-btn practice-a-btn" id="btn-form-P" onclick="app.attemptStart('P')">🌱 Practice A<span class="form-btn-sub">18 questions · 💡 hints read to you</span></button>
+          </div>
+          <p class="form-note">The problems are <strong>already in columns</strong>. Every hint is read to you. Get <strong>13 of 18</strong> right to open Practice B.</p>
         </div>
 
         <!-- Practice B — test-level questions with hints and word help; two times, then Teacher PIN -->
         <div class="step-card" id="practice-b-card">
-          <span class="step-label">Step 2 — Practice B</span>
+          <span class="step-label">Step 3 — Practice B</span>
           <div class="start-grid">
             <button class="start-btn practice-b-btn" id="btn-form-A" onclick="app.attemptStart('A')">🧭 Practice B<span class="form-btn-sub">17 questions · 💡 hints</span></button>
           </div>
@@ -99,7 +108,7 @@
 
         <!-- Review — no hints, no word help; two times, then Teacher PIN -->
         <div class="step-card" id="review-card">
-          <span class="step-label">Step 3 — Review</span>
+          <span class="step-label">Step 4 — Review</span>
           <div class="start-grid">
             <button class="start-btn review-btn" id="btn-form-B" onclick="app.attemptStart('B')">📘 Review<span class="form-btn-sub">17 questions · no hints · 2 tries</span></button>
           </div>
@@ -108,7 +117,7 @@
 
         <!-- Not taken yet → start the test -->
         <div class="step-card" id="quiz-start-card">
-          <span class="step-label">Step 4 — The Test</span>
+          <span class="step-label">Step 5 — The Test</span>
           <div class="start-grid">
             <button class="start-btn" id="btn-form-T" onclick="app.attemptStart('T')">📝 Take the Test<span class="form-btn-sub">17 questions · one try</span></button>
           </div>
@@ -134,7 +143,8 @@
 
         <div style="background:#f0f4ff;border:2px solid #a9c4f5;border-radius:12px;
                      padding:12px 16px;margin-bottom:12px;font-size:0.88rem;color:#2c3e50;line-height:1.6;">
-          📋 <strong>Rules:</strong> Do Practice A and Practice B as many times as you like.
+          📋 <strong>Rules:</strong> Do the Warm-Up, Practice A and Practice B as many times as you like.
+          Get <strong>9 of 12</strong> on the Warm-Up. Then Practice A opens.
           Get <strong>13 of 18</strong> on Practice A. Then Practice B opens.
           Get <strong>12 of 17</strong> on Practice B. Then the Review opens.
           You can take the Review <strong>two times</strong>. Get <strong>12 of 17</strong> on the Review. Then the Test opens.
@@ -208,20 +218,28 @@
       <p class="dir-text">You will add and subtract big numbers. Do the work on paper. Write the numbers in columns. Line up the places. Then pick your answer.</p>
     </div>
 
+    <div class="dir-section warm-up-dir">
+      <div class="dir-row">
+        <button class="speak-btn" onclick="speakDir(this)">🔊</button>
+        <h3 style="margin:0;">🔥 Step 1 — Warm-Up</h3>
+      </div>
+      <p class="dir-text">Start with the Warm-Up. First you watch and listen. Tap Listen and hear it to the end. Then you try a problem one step at a time. The steps do not count. Then you do 12 questions on your own. Every question has a hint, and the hint is read to you. You can do it as many times as you like. Get 9 of 12 right to open Practice A.</p>
+    </div>
+
     <div class="dir-section practice-a-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">🌱 Step 1 — Practice A</h3>
+        <h3 style="margin:0;">🌱 Step 2 — Practice A</h3>
       </div>
-      <p class="dir-text">Practice A is the easy start. It has 18 questions. The numbers are smaller. The problems are already in columns. Every question has a hint. After each answer you will see the right answer and why. You can do it as many times as you like. Get 13 of 18 right to open Practice B.</p>
+      <p class="dir-text">Get 9 of 12 right on the Warm-Up first. Then Practice A opens. It has 18 questions. The problems are already in columns. Every question has a hint, and the hint is read to you. After each answer you will see the right answer and why. You can do it as many times as you like. Get 13 of 18 right to open Practice B.</p>
     </div>
 
     <div class="dir-section practice-b-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">🧭 Step 2 — Practice B</h3>
+        <h3 style="margin:0;">🧭 Step 3 — Practice B</h3>
       </div>
-      <p class="dir-text">Get 13 of 18 right on Practice A first. Then Practice B opens. Practice B has 17 questions. They are like the test questions. Every question has a hint. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. That extra question does not change your score. You can do Practice B as many times as you like. Get 12 of 17 right to open the Review.</p>
+      <p class="dir-text">Get 13 of 18 right on Practice A first. Then Practice B opens. Practice B has 17 questions. They are like the test questions. Every question has a hint. The hint is not read to you here. If you get stuck, tap the Need a hint button. Tap the speaker by the hint to hear it. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. That extra question does not change your score. You can do Practice B as many times as you like. Get 12 of 17 right to open the Review.</p>
     </div>
 
     <div class="dir-section words-dir">
@@ -229,7 +247,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">📖 Word Help</h3>
       </div>
-      <p class="dir-text">Some questions have word buttons under them. Tap a word to see what it means. You will see an example too. Tap the speaker to hear it. Word help is in Practice A and Practice B. It is not in the Review. It is not on the Test.</p>
+      <p class="dir-text">Some questions have word buttons under them. Tap a word to see what it means. You will see an example too. Tap the speaker to hear it. Word help is in the Warm-Up, Practice A and Practice B. It is not in the Review. It is not on the Test.</p>
     </div>
 
     <div class="dir-section listen-dir">
@@ -237,13 +255,13 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">👂 If You Miss One</h3>
       </div>
-      <p class="dir-text">If you miss a question, you will see what went wrong. Tap the Listen button. Hear it to the end. Then the Next button shows. This is in Practice A, Practice B, and the Review.</p>
+      <p class="dir-text">If you miss a question, you will see what went wrong. Tap the Listen button. Hear it to the end. Then the Next button shows. This is in the Warm-Up, Practice A, Practice B, and the Review.</p>
     </div>
 
     <div class="dir-section form-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">📘 Step 3 — Review</h3>
+        <h3 style="margin:0;">📘 Step 4 — Review</h3>
       </div>
       <p class="dir-text">Get 12 of 17 right on Practice B first. Then the Review opens. The Review has 17 questions. There are no hints and no word help. After each answer you will see the right answer and the work. If you miss a question, you will see what went wrong. Then you get to try one like it. You can take the Review two times. Get 12 of 17 right to open the Test.</p>
     </div>
@@ -251,7 +269,7 @@
     <div class="dir-section attempts-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">🔒 Step 4 — The Test</h3>
+        <h3 style="margin:0;">🔒 Step 5 — The Test</h3>
       </div>
       <p class="dir-text">Get 12 of 17 right on the Review first. Then the Test opens. It has 17 questions. There are no hints and no word help. After each answer you will see if it is correct or not quite, but the right answer is not shown. You take the test one time. When you finish, it locks. Only your teacher can unlock a retake, so do your best work the first time.</p>
     </div>
@@ -261,7 +279,7 @@
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
         <h3 style="margin:0;">📖 Reading Timer</h3>
       </div>
-      <p class="dir-text">When each question appears, the answer choices are locked for 12 seconds. Use that time to read the question and choices carefully before making your selection.</p>
+      <p class="dir-text">When each question appears, the answer choices are locked for 12 seconds. Use that time to read the question and choices carefully before making your selection. A Warm-Up step locks for 3 seconds.</p>
       <span class="timer-chip chip-amber">⏱️ 12 second read lock</span>
     </div>
 
@@ -435,16 +453,17 @@
 </div><!-- /.container -->
 
 <script src="share.js?v=3"></script>
-<script src="data/form_p.js?v=m2k"></script>
-<script src="data/form_a.js?v=m2k"></script>
-<script src="data/form_b.js?v=m2k"></script>
-<script src="data/form_t.js?v=m2k"></script>
-<script src="data/form_u.js?v=m2k"></script>
-<script src="data/twin_x.js?v=m2k"></script>
-<script src="data/twin_y.js?v=m2k"></script>
-<script src="data/words.js?v=m2k"></script>
-<script src="data/skills.js?v=m2k"></script>
-<script src="visuals.js?v=m2k"></script>
-<script src="script.js?v=m2k-sh2-hl2-nav1"></script>
+<script src="data/form_w.js?v=m2l"></script>
+<script src="data/form_p.js?v=m2l"></script>
+<script src="data/form_a.js?v=m2l"></script>
+<script src="data/form_b.js?v=m2l"></script>
+<script src="data/form_t.js?v=m2l"></script>
+<script src="data/form_u.js?v=m2l"></script>
+<script src="data/twin_x.js?v=m2l"></script>
+<script src="data/twin_y.js?v=m2l"></script>
+<script src="data/words.js?v=m2l"></script>
+<script src="data/skills.js?v=m2l"></script>
+<script src="visuals.js?v=m2l"></script>
+<script src="script.js?v=m2l"></script>
 </body>
 </html>

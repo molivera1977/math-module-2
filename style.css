@@ -784,3 +784,19 @@ button.answer-btn.incorrect { background: #f8d7da; border-color: #dc3545; color:
                font-size:0.95rem; font-weight:700; padding:8px 16px; cursor:pointer; }
 .signout-btn:hover { border-color:#999; color:#333; }
 .signout-sub { display:block; font-size:0.8rem; font-weight:600; color:#888; margin-top:2px; }
+
+/* ══ WARM-UP (Marcos 10/15) ══════════════════════════════════
+   The worked example ("watch") sits in a calm blue box with the Listen button;
+   in a step-by-step problem the place being worked is shaded, and its answer is the "?". */
+.part-banner.pb-warm-up { background: #d35400; }
+.feedback-box.teach-box { display: block; background: #eef5ff; border-color: #7fb0ec; color: #1d3557; }
+.watch-tag { display: inline-block; background: #d35400; color: #fff; font-size: .8em; font-weight: 800; border-radius: 8px; padding: 2px 10px; margin-right: 6px; vertical-align: middle; }
+.m2-stack td.m2-now { background: #fff1c2; border-radius: 4px; }
+.m2-stack .m2-step td { color: var(--correct-dk); }
+.m2-stack .m2-step td.m2-now { color: var(--primary); }
+.start-btn.warm-up-btn { background: #e67e22; box-shadow: 0 5px 0 #a04000; }
+.start-btn.warm-up-btn:hover { box-shadow: 0 8px 0 #a04000; }
+.warm-up-dir    { background: #fff4e8; border-color: #f5c08a; }
+.warm-up-dir h3 { color: #a04000; }
+.teach-box .watch-line { margin: 0 0 8px; }
+.teach-box .watch-sum { font-weight: 700; }

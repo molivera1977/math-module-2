@@ -50,34 +50,75 @@
     return { n, A, B, R, marks, struck, res };
   }
 
+  /* WARM-UP STEPS (Marcos 10/15): the problem part-way worked, one place at a time.
+     cfg.step = { upto, now, regrouped }
+       upto      = how many places are already done, counting from the ones (their answer digits show)
+       now       = the next place is the one being worked: it is highlighted and its answer is "?"
+       regrouped = that place has already regrouped (subtracting): its new value and the place it took 1 from show
+     Worked the same way stackModel works it, place by place, so a step picture can never disagree
+     with the finished columns. (No regrouping across a 0 here — the Warm-Up does not use one.) */
+  function stepState(cfg) {
+    const m = stackModel(cfg.a, cfg.b, cfg.op);
+    const n = m.n, st = cfg.step || {}, upto = st.upto || 0;
+    const digit = (arr, i) => (arr[i] === ' ' ? 0 : Number(arr[i]));
+    const R = new Array(n).fill(' '), marks = new Array(n).fill(''), struck = new Array(n).fill(false);
+    if (cfg.op === '+') {
+      let carry = 0;
+      for (let r = 0; r < upto && r < n; r++) {
+        const i = n - 1 - r, sum = digit(m.A, i) + digit(m.B, i) + carry;
+        R[i] = String(sum % 10);
+        carry = sum >= 10 ? 1 : 0;
+        if (carry && i > 0) marks[i - 1] = '1';
+      }
+    } else {
+      const cur = m.A.map(ch => (ch === ' ' ? null : Number(ch)));
+      const borrow = i => { cur[i] += 10; cur[i - 1] -= 1; };
+      for (let r = 0; r < upto && r < n; r++) {
+        const i = n - 1 - r;
+        if (cur[i] < digit(m.B, i)) borrow(i);
+        R[i] = cur[i] - digit(m.B, i) === 0 && i === 0 ? ' ' : String(cur[i] - digit(m.B, i));
+      }
+      if (st.regrouped && upto < n) borrow(n - 1 - upto);
+      cur.forEach((v, i) => { if (v !== null && v !== digit(m.A, i)) { marks[i] = String(v); struck[i] = true; } });
+    }
+    const nowAt = st.now && upto < n ? n - 1 - upto : -1;
+    if (nowAt >= 0) R[nowAt] = '?';
+    return { m, R, marks, struck, nowAt };
+  }
+
   /* mode 'worked' (default) = the answer and the regrouping marks ·
      'ask' = the problem set up in columns, "?" for the answer, no marks ·
      'done' = the answer shown, no marks (a finished problem to look at) */
   function stackHTML(cfg, mode) {
-    mode = mode || 'worked';
+    mode = cfg.step ? 'step' : (mode || 'worked');
     const m = stackModel(cfg.a, cfg.b, cfg.op);
-    if (mode !== 'worked') { m.marks.fill(''); m.struck.fill(false); }
+    let nowAt = -1;
+    if (mode === 'step') {
+      const s = stepState(cfg);
+      m.R = s.R; m.marks = s.marks; m.struck = s.struck; nowAt = s.nowAt;
+    }
+    if (mode !== 'worked' && mode !== 'step') { m.marks.fill(''); m.struck.fill(false); }
     if (mode === 'ask') m.R = m.R.map((ch, i) => (i === m.n - 1 ? '?' : ' '));
     const sign = cfg.op === '+' ? '+' : '−';
     // the thousands digit (and the millions digit) carries the comma
     const cell = (ch, i, cls) => {
       const fromRight = m.n - 1 - i;
       const comma = ch !== ' ' && fromRight > 0 && fromRight % 3 === 0;
-      const klass = [cls, comma ? 'm2-comma' : ''].filter(Boolean).join(' ');
+      const klass = [cls, comma ? 'm2-comma' : '', i === nowAt ? 'm2-now' : ''].filter(Boolean).join(' ');
       return `<td${klass ? ` class="${klass}"` : ''}>${ch === ' ' ? '' : ch}</td>`;
     };
     const row = (arr, cls, lead, each) =>
       `<tr${cls ? ` class="${cls}"` : ''}><td class="m2-op">${lead}</td>${arr.map((ch, i) => cell(ch, i, each ? each(i) : '')).join('')}</tr>`;
     const hasMarks = m.marks.some(Boolean);
     const marksRow = hasMarks
-      ? `<tr class="m2-marks"><td class="m2-op"></td>${m.marks.map(v => `<td>${v}</td>`).join('')}</tr>` : '';
+      ? `<tr class="m2-marks"><td class="m2-op"></td>${m.marks.map((v, i) => `<td${i === nowAt ? ' class="m2-now"' : ''}>${v}</td>`).join('')}</tr>` : '';
     const said = `${fmt(cfg.a)} ${cfg.op === '+' ? 'plus' : 'minus'} ${fmt(cfg.b)}` +
-      (mode === 'ask' ? ', written in columns' : ` equals ${fmt(m.res)}, ${mode === 'done' ? 'written' : 'worked'} in columns`);
+      (mode === 'ask' || mode === 'step' ? ', written in columns' : ` equals ${fmt(m.res)}, ${mode === 'done' ? 'written' : 'worked'} in columns`);
     return `<div class="m2-vis m2-stack-wrap"><table class="m2-stack" role="img" aria-label="${said}">` +
       marksRow +
       row(m.A, '', '', i => (m.struck[i] ? 'm2-struck' : '')) +
       row(m.B, 'm2-bot', sign) +
-      row(m.R, mode === 'ask' ? 'm2-ans m2-ask' : 'm2-ans', '') +
+      row(m.R, mode === 'ask' ? 'm2-ans m2-ask' : mode === 'step' ? 'm2-ans m2-step' : 'm2-ans', '') +
       `</table></div>`;
   }
 
@@ -158,7 +199,7 @@
     return out ? `<div class="m2-explain">${out}</div>` : '';
   }
 
-  const api = { stackModel, stackHTML, rectSVG, barHTML, workHTML, picHTML, explainHTML };
+  const api = { stackModel, stepState, stackHTML, rectSVG, barHTML, workHTML, picHTML, explainHTML };
   root.M2V = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

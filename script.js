@@ -5,13 +5,18 @@
    practice and quiz sites"). Engine = copy of the Rounding Review and
    Quiz - Numberline Edition (math-rounding-quiz-2): steps on one start
    screen, a part banner on every question, one open/closed flag per part.
-   THE FOUR PARTS — same names on every math site (Marcos 10/10: "keep the same
+   THE PARTS — same names on every math site (Marcos 10/10: "keep the same
    terminology across all our math tests and quizzes. Practice A, Practice B,
-   Review, and Test"):
-     Step 1  PRACTICE A  form P  easy start: smaller numbers, in order, problem in columns, hints, word help; unlimited; 70% opens Practice B
-     Step 2  PRACTICE B  form A  test-level questions with hints and word help; unlimited; 70% opens the Review
-     Step 3  REVIEW      form B  test-level, no hints, no word help; two times (a third needs the Teacher PIN); 70% opens the Test
-     Step 4  TEST        form T  one attempt, right/wrong only, then locked · form U = the retake (new numbers, Teacher PIN)
+   Review, and Test"), plus a Warm-Up in front (Marcos 10/15, after the first day of Practice A:
+   "can we create an easier version than Practice A to help teach and prepare students for
+   Practice A?" — "a mandatory read aloud listen with a worked example then step by step and an
+   easier Practice A", 70% to move on):
+     Step 1  WARM-UP     form W  per skill: a worked example the student must hear to the end, a problem worked one place at a time
+                                 (steps, NOT scored), then easier questions (12, scored); in order; unlimited; 70% opens Practice A
+     Step 2  PRACTICE A  form P  smaller numbers, in order, problem in columns, hints read aloud by themselves, word help; unlimited; 70% opens Practice B
+     Step 3  PRACTICE B  form A  test-level questions with hints and word help; unlimited; 70% opens the Review
+     Step 4  REVIEW      form B  test-level, no hints, no word help; two times (a third needs the Teacher PIN); 70% opens the Test
+     Step 5  TEST        form T  one attempt, right/wrong only, then locked · form U = the retake (new numbers, Teacher PIN)
    The form letters, ids (P01… A01… B01… T01… U01…) and game keys did not change when the
    parts were renamed on 10/10 (Practice → Practice A, Review A → Practice B, Review B → Review,
    Test A → Test), so saved sessions and sheet rows from before still fit.
@@ -27,7 +32,7 @@
      question of the same kind (twin_x.js / twin_y.js); it never changes the score
    - WORD HELP — a button under the question for each math word in it (data/words.js);
      Practice A and Practice B only
-   Game keys mod2-practice (Practice A) / mod2a-review (Practice B) / mod2b-review (Review) /
+   Game keys mod2w-warmup (Warm-Up) / mod2-practice (Practice A) / mod2a-review (Practice B) / mod2b-review (Review) /
    mod2t-test (Test) / mod2u-test (retake), storage prefix mm2_. Pictures live in visuals.js.
    PIN: 9377 (Teacher override)
 ═══════════════════════════════════════════════════════ */
@@ -36,13 +41,16 @@
 // Each part opens on its own. false = students locked out of that part;
 // Teacher Access still works. Set true to open.
 const SHARE_MODE    = !!window.SHARE_MODE;   // set by share.js — a visitor's link, never a student's
-const PRACTICE_A_OPEN = true;    // Step 1 · Practice A — the easy start
-const PRACTICE_B_OPEN = true;    // Step 2 · Practice B — hints and word help
-const REVIEW_OPEN     = false;   // Step 3 · Review — no hints, no word help (the last stop before the test)
-const TEST_OPEN       = false;   // Step 4 · Test — official (its retake needs the Teacher PIN)
+const WARM_UP_OPEN    = true;    // Step 1 · Warm-Up — watch, step by step, then easier questions
+const PRACTICE_A_OPEN = true;    // Step 2 · Practice A — the hints read themselves aloud
+const PRACTICE_B_OPEN = true;    // Step 3 · Practice B — hints and word help
+const REVIEW_OPEN     = false;   // Step 4 · Review — no hints, no word help (the last stop before the test)
+const TEST_OPEN       = false;   // Step 5 · Test — official (its retake needs the Teacher PIN)
 // THE GATES — Marcos 10/10: "Let's make Practice A and B unlimited, Review requires completing
 // Practice A and Practice B and a 70% on Practice B, Test requires 70 % on Review."
-//   Practice A, Practice B  as many times as they like
+//   Warm-Up, Practice A, Practice B  as many times as they like
+//   Practice A opens after a Warm-Up with 70% or better (Marcos 10/15: "they too should need a 70 %") —
+//     9 of its 12 scored questions; a student who already passed Practice A keeps it open
 //   Practice B opens after a Practice A with 70% or better (Marcos 10/11: "yes, add it") — 13 of 18
 //   Review   opens after a finished Practice A + a finished Practice B with 70% or better (best try counts)
 //   Test     opens after a Review with 70% or better (best try counts)
@@ -54,6 +62,9 @@ const PASS_PCT      = 70;
 const INSTRUCT_SECS = 20;
 const READ_SECS     = 12;
 const NEXT_SECS     = 8;
+// Warm-Up steps are short (one small step of a problem), so their locks are short too
+const STEP_READ_SECS = 3;
+const STEP_NEXT_SECS = 3;
 const STORAGE_KEY   = 'mm2_session_v1';
 const SCORES_KEY    = 'mm2_scores_v1';
 const RNDQ_SESSION_ID_KEY = 'mm2_session_id_v1';
@@ -63,26 +74,37 @@ const SESSION_ID = (() => {
   return id;
 })();
 
-const FORMS = ['P', 'A', 'B', 'T', 'U'];
+const FORMS = ['W', 'P', 'A', 'B', 'T', 'U'];
+const isWarmUp = form => form === 'W';
 const isPractice = form => form === 'P';
 const isReview = form => form === 'A' || form === 'B';
 const isTest   = form => form === 'T' || form === 'U';
 // Practice A, Practice B and the Review teach (answer + why + the worked picture + the mistake named); the Test does not.
 // In the code: isPractice = Practice A (form P) · isReview = Practice B and the Review (forms A, B) · isTest = T, U
-const teaches = form => isReview(form) || isPractice(form);
+const teaches = form => isReview(form) || isPractice(form) || isWarmUp(form);
+// The Warm-Up and Practice A stay in their order (easiest first); the others are shuffled
+const keepsOrder = form => isPractice(form) || isWarmUp(form);
+// Marcos 10/15: "make the hints in Practice A automatic read alouds, not an option. Keep it an option
+// in Practice B." In Practice A (and the Warm-Up before it) the hint is open and reads itself aloud
+// when the question appears; in Practice B it stays behind 💡 Need a hint?
+const autoHint = form => isPractice(form) || isWarmUp(form);
+/* Only questions count toward the score. A Warm-Up 'watch' (worked example) and 'step' (one step of a
+   problem) are teaching, not scored. */
+const isScored = q => !!q && !q.kind;
+const scoredCount = bank => (bank || []).filter(isScored).length;
 // Word help (a button per math word) is a support, so it comes off one step before the test:
 // Practice A and Practice B have it; the Review and the Test do not (Marcos 10/10).
-const wordHelp = form => form === 'P' || form === 'A';
+const wordHelp = form => form === 'W' || form === 'P' || form === 'A';
 // "Try one like it": after a miss in a review, one more question of the same kind from this bank
 const TWINS = { A: 'X', B: 'Y' };
-const FORM_NAMES = { P: 'Practice A', A: 'Practice B', B: 'Review', T: 'Test', U: 'Test (Retake)' };
+const FORM_NAMES = { W: 'Warm-Up', P: 'Practice A', A: 'Practice B', B: 'Review', T: 'Test', U: 'Test (Retake)' };
 function formOpen(form) {
-  return SHARE_MODE || (isPractice(form) ? PRACTICE_A_OPEN : form === 'A' ? PRACTICE_B_OPEN : form === 'B' ? REVIEW_OPEN : TEST_OPEN);
+  return SHARE_MODE || (isWarmUp(form) ? WARM_UP_OPEN : isPractice(form) ? PRACTICE_A_OPEN : form === 'A' ? PRACTICE_B_OPEN : form === 'B' ? REVIEW_OPEN : TEST_OPEN);
 }
-const ANY_OPEN = PRACTICE_A_OPEN || PRACTICE_B_OPEN || REVIEW_OPEN || TEST_OPEN;
+const ANY_OPEN = WARM_UP_OPEN || PRACTICE_A_OPEN || PRACTICE_B_OPEN || REVIEW_OPEN || TEST_OPEN;
 /* Sheet / dashboard game key — one per form */
 function gameKey(form) {
-  return { P: 'mod2-practice', A: 'mod2a-review', B: 'mod2b-review', T: 'mod2t-test', U: 'mod2u-test' }[form];
+  return { W: 'mod2w-warmup', P: 'mod2-practice', A: 'mod2a-review', B: 'mod2b-review', T: 'mod2t-test', U: 'mod2u-test' }[form];
 }
 
 /* ── SHEET SUBMISSION ───────────────────────────────── */
@@ -103,7 +125,7 @@ function missEntry(m) {
 
 /* What the sheet's "form" column says: Practice A · Practice B · Review · Test · Test — Retake */
 function formLabel(attempt) {
-  return { P: 'Practice A', A: 'Practice B', B: 'Review', T: 'Test', U: 'Test — Retake' }[app.currentForm];
+  return { W: 'Warm-Up', P: 'Practice A', A: 'Practice B', B: 'Review', T: 'Test', U: 'Test — Retake' }[app.currentForm];
 }
 /* The attempt this session will be once it finishes (finished ones on this device + 1). */
 function upcomingAttempt() {
@@ -111,8 +133,8 @@ function upcomingAttempt() {
 }
 
 function submitScorePartial() {
-  const pct = app.currentBank.length
-    ? Math.round((app.score / app.currentBank.length) * 100) : 0;
+  const total = scoredCount(app.currentBank);
+  const pct = total ? Math.round((app.score / total) * 100) : 0;
   fetch(SHEET_URL, {
     method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
@@ -123,7 +145,7 @@ function submitScorePartial() {
       name:      app.studentName || 'Unknown',
       form:      formLabel(upcomingAttempt()),
       score:     app.score,
-      total:     app.currentBank.length,
+      total:     total,
       percent:   pct,
       status:    `In Progress (Q${app.currentIndex + 1}/${app.currentBank.length})`,
       done:           false,
@@ -139,8 +161,8 @@ function submitScorePartial() {
 }
 
 function submitScoreFinal() {
-  const pct = app.currentBank.length
-    ? Math.round((app.score / app.currentBank.length) * 100) : 0;
+  const total = scoredCount(app.currentBank);
+  const pct = total ? Math.round((app.score / total) * 100) : 0;
   fetch(SHEET_URL, {
     method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
@@ -152,7 +174,7 @@ function submitScoreFinal() {
       form:      formLabel(app.currentAttemptNum),
       attempt:   app.currentAttemptNum || 1,
       score:     app.score,
-      total:     app.currentBank.length,
+      total:     total,
       percent:   pct,
       status:    'Complete',
       done:           true,
@@ -339,7 +361,8 @@ function stopActiveSpeech() {
 
 /* ── HINT BOX (Marcos 10/7) ──
    "The hints should not play automatically. They should be there if
-   needed." Until the student taps 💡 Need a hint?, only that button shows
+   needed." — still the rule in Practice B. In Practice A and the Warm-Up the hint is open
+   and reads itself aloud (Marcos 10/15, see autoHint). Until the student taps 💡 Need a hint?, only that button shows
    and nothing is read. Once opened, the hint has its own 🔊 on the LEFT,
    same toggle as every other speaker (tap to play, tap to stop, tap again
    to restart); every word (including "Hint:") is a span for the highlight.
@@ -446,7 +469,7 @@ function speakWordCard(btn) {
 /* ── PART BANNER (Marcos 10/8: "I want to be able to know which part the
    students are on") — a big colored label on top of every question:
    the step number and the part's name, one color per part. ── */
-const PART_BANNER = { P: ['🌱', 'Step 1 · Practice A', 'pb-practice-a'], A: ['🧭', 'Step 2 · Practice B', 'pb-practice-b'], B: ['📘', 'Step 3 · Review', 'pb-review'], T: ['📝', 'Step 4 · Test', 'pb-quiz'], U: ['📝', 'Step 4 · Test', 'pb-quiz'] };
+const PART_BANNER = { W: ['🔥', 'Step 1 · Warm-Up', 'pb-warm-up'], P: ['🌱', 'Step 2 · Practice A', 'pb-practice-a'], A: ['🧭', 'Step 3 · Practice B', 'pb-practice-b'], B: ['📘', 'Step 4 · Review', 'pb-review'], T: ['📝', 'Step 5 · Test', 'pb-quiz'], U: ['📝', 'Step 5 · Test', 'pb-quiz'] };
 function setPartBanner(form) {
   const el = document.getElementById('part-banner');
   const p = PART_BANNER[form];
@@ -508,7 +531,7 @@ function addHighlightFallback(u, spans) {
 /* ── ATTEMPT TRACKING ───────────────────────────────── */
 function getFormAttempts(name) {
   const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
-  const counts = { P: 0, A: 0, B: 0, T: 0, U: 0 };
+  const counts = { W: 0, P: 0, A: 0, B: 0, T: 0, U: 0 };
   scores.filter(s => s.name === name && s.done).forEach(s => {
     if (counts[s.form] !== undefined) counts[s.form]++;
   });
@@ -537,7 +560,16 @@ function passed(name, form) {
 }
 /* How many right it takes: 70% of 17 questions = 12 */
 function needFor(form) {
-  return Math.ceil(PASS_PCT / 100 * window['FORM_' + form].length);
+  return Math.ceil(PASS_PCT / 100 * scoredCount(window['FORM_' + form]));
+}
+/* Why Practice A is not open for this student yet ('' = it is open). A student who already
+   passed Practice A keeps it (the Warm-Up came after them). */
+function practiceAWait(name) {
+  if (ANY_ORDER || SHARE_MODE || passed(name, 'P')) return '';
+  const a = getFormAttempts(name);
+  if (!a.W) return 'Finish the Warm-Up first';
+  if (!passed(name, 'W')) return `Get ${needFor('W')} of ${scoredCount(window.FORM_W)} on the Warm-Up first`;
+  return '';
 }
 /* Why Practice B is not open for this student yet ('' = it is open).
    A Practice B that was already started before this gate existed can still be resumed and finished. */
@@ -587,12 +619,19 @@ function applyFormLocks(name) {
   const startCard = document.getElementById('quiz-start-card');
   const doneCard  = document.getElementById('completed-container');
   const retake    = document.getElementById('retake-card');
-  // Practice A: no limit. After a try the button shows the best score and what opens Practice B.
+  // Warm-Up: no limit. After a try the button shows the best score and what opens Practice A.
+  const bestW = bestScore(name, 'W'), nW = scoredCount(window.FORM_W);
+  setFormButton('W', '🔥 Warm-Up',
+    !bestW ? `watch, then try · ${nW} questions · 💡 hints`
+    : passed(name, 'W') ? `✅ Best: ${bestW.score} of ${bestW.total} · do it again any time`
+    : `🔁 Best: ${bestW.score} of ${bestW.total} · get ${needFor('W')} to open Practice A`);
+  // Practice A: waits for 70% on the Warm-Up; no limit. After a try the button shows the best score and what opens Practice B.
   const bestA = bestScore(name, 'P');
   setFormButton('P', '🌱 Practice A',
-    !bestA ? '18 questions · the easy start · 💡 hints'
+    !bestA ? '18 questions · 💡 hints read to you'
     : passed(name, 'P') ? `✅ Best: ${bestA.score} of ${bestA.total} · practice again any time`
-    : `🔁 Best: ${bestA.score} of ${bestA.total} · get ${needFor('P')} to open Practice B`);
+    : `🔁 Best: ${bestA.score} of ${bestA.total} · get ${needFor('P')} to open Practice B`,
+    practiceAWait(name));
   // Practice B: waits for 70% on Practice A; no limit. After a try the button shows the best score and what opens the Review.
   const bestB = bestScore(name, 'A');
   setFormButton('A', '🧭 Practice B',
@@ -969,18 +1008,18 @@ const app = {
 
   /* ── ATTEMPT START ── */
   attemptStart(form) {
-    if (!this.studentName || !['P', 'A', 'B', 'T'].includes(form) || !formOpen(form)) return;
+    if (!this.studentName || !['W', 'P', 'A', 'B', 'T'].includes(form) || !formOpen(form)) return;
     // The test is one try — a finished one needs a Teacher-PIN retake
     if (form === 'T' && testCompleted(this.studentName)) { applyFormLocks(this.studentName); return; }
-    // The gates: Practice B waits for 70% on Practice A; the Review waits for Practice A + 70% on Practice B;
-    // the Test waits for 70% on the Review. The Teacher PIN lets this one student past.
+    // The gates: Practice A waits for 70% on the Warm-Up; Practice B waits for 70% on Practice A; the Review
+    // waits for Practice A + 70% on Practice B; the Test waits for 70% on the Review. The Teacher PIN lets this one student past.
     const why = form === 'T' ? testWait(this.studentName) : form === 'B' ? reviewWait(this.studentName)
-      : form === 'A' ? practiceBWait(this.studentName) : '';
+      : form === 'A' ? practiceBWait(this.studentName) : form === 'P' ? practiceAWait(this.studentName) : '';
     if (why) {
       this.showPinModal(
         '📘 Not Yet',
         `${getFirstName(this.studentName)}: ${why.charAt(0).toLowerCase() + why.slice(1)}. ` +
-        `Teachers: enter your PIN to let this student ${form === 'T' ? 'take the test' : form === 'B' ? 'start the Review' : 'start Practice B'} now.`,
+        `Teachers: enter your PIN to let this student ${form === 'T' ? 'take the test' : form === 'B' ? 'start the Review' : form === 'A' ? 'start Practice B' : 'start Practice A'} now.`,
         () => this.startSession(form)
       );
       return;
@@ -1024,8 +1063,8 @@ const app = {
   },
 
   _showReviewPicker() {
-    const form = prompt('Choose a part to look at:\n1 — Practice A\n2 — Practice B\n3 — Review\n4 — Test\n5 — Test (retake)\n\nEnter 1, 2, 3, 4 or 5:');
-    const map = { '1': 'P', '2': 'A', '3': 'B', '4': 'T', '5': 'U' };
+    const form = prompt('Choose a part to look at:\n0 — Warm-Up\n1 — Practice A\n2 — Practice B\n3 — Review\n4 — Test\n5 — Test (retake)\n\nEnter 0, 1, 2, 3, 4 or 5:');
+    const map = { '0': 'W', '1': 'P', '2': 'A', '3': 'B', '4': 'T', '5': 'U' };
     if (!map[form]) { alert('Invalid choice.'); reviewMode = false; return; }
     const mode = prompt('Choose review mode:\n1 — Manual (tap Next each question)\n2 — Auto-run (fully automatic)\n\nEnter 1 or 2:');
     if (mode !== '1' && mode !== '2') { alert('Invalid choice.'); reviewMode = false; return; }
@@ -1094,12 +1133,13 @@ const app = {
     const rawBank = [...window['FORM_' + form]];
 
     const shuffleQ = q => {
+      if (!q.choices) return { ...q };           // a Warm-Up worked example has no choices
       const shuffled = [...q.choices].sort(() => Math.random() - 0.5);
       return { ...q, choices: shuffled };
     };
     this.currentBank = rawBank.map(shuffleQ);
-    // Practice A keeps its order: easiest first
-    if (!isPractice(form)) shuffle(this.currentBank);
+    // The Warm-Up and Practice A keep their order: easiest first (the Warm-Up's steps belong in order)
+    if (!keepsOrder(form)) shuffle(this.currentBank);
 
     const banner = document.getElementById('review-mode-banner');
     if (banner) {
@@ -1266,14 +1306,15 @@ const app = {
       return;
     }
 
+    const secs = this.readSecs || READ_SECS;
     bar.classList.remove('hidden');
-    count.textContent = READ_SECS;
+    count.textContent = secs;
 
     // Single CSS transition — truly smooth over full duration
     fill.style.transition = 'none';
     fill.style.width = '100%';
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      fill.style.transition = `width ${READ_SECS}s linear`;
+      fill.style.transition = `width ${secs}s linear`;
       fill.style.width = '0%';
     }));
 
@@ -1282,7 +1323,7 @@ const app = {
       b.disabled = true;
     });
 
-    let remaining = READ_SECS;
+    let remaining = secs;
     this.readInterval = setInterval(() => {
       remaining--;
       count.textContent = remaining;
@@ -1316,18 +1357,19 @@ const app = {
       return;
     }
 
+    const secs = this.nextSecs || NEXT_SECS;
     bar.classList.remove('hidden');
-    count.textContent = NEXT_SECS;
+    count.textContent = secs;
 
     // Single CSS transition — truly smooth over full duration
     fill.style.transition = 'none';
     fill.style.width = '100%';
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      fill.style.transition = `width ${NEXT_SECS}s linear`;
+      fill.style.transition = `width ${secs}s linear`;
       fill.style.width = '0%';
     }));
 
-    let remaining = NEXT_SECS;
+    let remaining = secs;
     this.nextInterval = setInterval(() => {
       remaining--;
       count.textContent = remaining;
@@ -1347,7 +1389,13 @@ const app = {
     const q     = this.currentQ();
     const total = this.currentBank.length;
 
-    document.getElementById('progress-text').textContent = `Question ${this.currentIndex + 1} of ${total}`;
+    document.getElementById('progress-text').textContent = isWarmUp(this.currentForm)
+      ? `${q.kind === 'watch' ? '👀 Watch' : q.kind === 'step' ? '🪜 Step by step' : '✏️ Your turn'} · ${this.currentIndex + 1} of ${total}`
+      : `Question ${this.currentIndex + 1} of ${total}`;
+    this.readSecs = q.kind === 'step' ? STEP_READ_SECS : READ_SECS;
+    this.nextSecs = q.kind === 'step' ? STEP_NEXT_SECS : NEXT_SECS;
+    if (q.kind === 'watch') { this._renderWatch(q, total); return; }
+    document.getElementById('speak-q-btn').classList.remove('hidden');
     // "Try one like it" strip: shown only while a twin question is up
     const twinNote = document.getElementById('twin-note');
     if (twinNote) twinNote.classList.toggle('hidden', !this.twin);
@@ -1359,8 +1407,10 @@ const app = {
     // Question text
     const qtEl = document.getElementById('question-text');
     let qHTML = formatMathText(q.q);
-    this.hintShown = false;   // every question starts with the hint closed
-    if (q.hint) qHTML += hintBoxHTML(q.hint, false);
+    // Practice B: every question starts with the hint closed. Practice A / Warm-Up: open, and it reads itself (below).
+    const sayHint = !!q.hint && autoHint(this.currentForm) && !reviewMode;
+    this.hintShown = sayHint;
+    if (q.hint) qHTML += hintBoxHTML(q.hint, sayHint);
     qtEl.innerHTML = qHTML;
     // The picture lives outside #question-text, so speakQuestion's
     // word-wrapping never touches it
@@ -1443,6 +1493,49 @@ const app = {
     if (!this.twin && this.currentIndex > 0 && this.currentIndex % 5 === 0) submitScorePartial();
     this.saveProgress();
     this.startReadTimer();
+    if (sayHint) {
+      const shownQ = q;
+      setTimeout(() => {
+        const hb = document.querySelector('#question-text .hint-speak-btn');
+        if (hb && this.currentQ() === shownQ && !this.questionLocked && !activeSpeakBtn) speakHint(hb);
+      }, 400);
+    }
+  },
+
+  /* 👀 WATCH (Warm-Up): a worked example. No choices. The student must hear it to the end
+     (the same Listen as after a miss), then Next shows. Not scored. */
+  _renderWatch(q, total) {
+    document.getElementById('twin-note').classList.add('hidden');
+    document.getElementById('score-text').textContent = `${getFirstName(this.studentName)} · ${this.score}`;
+    document.getElementById('progress-fill').style.width = `${(this.currentIndex / total) * 100}%`;
+    this._renderStreak();
+    document.getElementById('question-text').innerHTML = `<span class="watch-tag">👀 Watch and listen</span> ${formatMathText(q.title)}`;
+    document.getElementById('speak-q-btn').classList.add('hidden');   // the Listen button below reads this screen
+    document.getElementById('q-visual').innerHTML = '';
+    document.getElementById('q-words').innerHTML = '';
+    document.getElementById('answers').innerHTML = '';
+    ['confirm-btn', 'next-btn', 'next-timer-bar', 'reading-timer-bar'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    this.selectedAnswer = null; this.questionLocked = false; this.hintShown = false; this.wordOpen = null;
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback-box teach-box';
+    fb.style.display = 'block';
+    // one line per place / idea ("\n" in the data); the voice reads it all in one go
+    fb.innerHTML = q.text.split('\n').map((line, i, all) => `<div class="watch-line${i === all.length - 1 ? ' watch-sum' : ''}">${wrapWords(formatMathText(line))}</div>`).join('');
+    const spans = Array.from(fb.querySelectorAll('.wrd')).filter(el => /[A-Za-z0-9+=×−]/.test(el.textContent));
+    const spoken = convertToSpokenText(spans.map(el => el.textContent).join(' '));
+    const small = document.createElement('button');
+    small.className = 'speak-btn';
+    fb.prepend(small);
+    this.soakDone = true;                       // no pause here: hearing it to the end is the wait
+    this.mustHear = !reviewMode;
+    if (this.mustHear) this._armListen(fb, small, spans, spoken, q.id, () => { this.questionLocked = true; });
+    else { small.remove(); this.questionLocked = true; }
+    fb.insertAdjacentHTML('beforeend', M2V.explainHTML(q.pic));   // the worked picture, under the Listen button
+    this.saveProgress();
+    if (reviewMode) {
+      document.getElementById('next-btn').classList.remove('hidden');
+      if (reviewAutoRun) setTimeout(() => this.nextQuestion(), 1200);
+    }
   },
 
   _selectChoice(text, btn) {
@@ -1470,7 +1563,7 @@ const app = {
   },
 
   /* LISTEN, THEN NEXT — the big Listen button under the feedback after a miss (see LISTEN_START_WAIT) */
-  _armListen(fb, smallBtn, spans, text, qid) {
+  _armListen(fb, smallBtn, spans, text, qid, onHeard) {
     smallBtn.style.display = 'none';              // one thing to press
     const row = document.createElement('div');
     row.className = 'listen-row';
@@ -1486,6 +1579,7 @@ const app = {
       if (!this.mustHear || !btn.isConnected) return;
       this.mustHear = false;
       logEvent('heard', { id: qid, how });      // how: 'voice' or 'read' (no sound on the device)
+      if (onHeard) onHeard();
       btn.disabled = false; btn.classList.add('heard'); btn.onclick = play; idle();
       note.textContent = '✅ Done. You can go on.';
       this.saveProgress();
@@ -1556,8 +1650,13 @@ const app = {
     const q = this.currentQ();
     const correct = this.selectedAnswer === q.answer;
     const isTwin = !!this.twin;
+    const isStep = q.kind === 'step';
 
-    if (isTwin) {
+    if (isStep) {
+      // A Warm-Up step is teaching, not a question: it never changes the score and is not a "missed
+      // question". It rides in the event log so the dashboard can show which step tripped whom.
+      logEvent('step', Object.assign({ id: q.id, ok: correct }, correct ? {} : { pick: this.selectedAnswer }));
+    } else if (isTwin) {
       // "Try one like it" never changes the score. The result rides in the event
       // log (the dashboard reads it) and on the miss it follows (the end screen shows it).
       logEvent('twin', Object.assign({ id: q.id, of: q.twinOf, ok: correct }, correct ? {} : { pick: this.selectedAnswer }));
@@ -1670,7 +1769,7 @@ const app = {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(RNDQ_SESSION_ID_KEY);
 
-    const total = this.currentBank.length;
+    const total = scoredCount(this.currentBank);   // the Warm-Up's watch and step items are not scored
     const pct   = Math.round((this.score / total) * 100);
     const date  = new Date();
 
@@ -1749,7 +1848,8 @@ const app = {
     const box = document.getElementById('q-words');
     if (!box) return;
     const q = this.currentQ();
-    box.innerHTML = q && wordHelp(this.currentForm) ? wordChipsHTML(q, this.wordOpen) : '';
+    // Warm-Up steps get no word help: a card could hand over the step's answer ("how many more" → subtract)
+    box.innerHTML = q && wordHelp(this.currentForm) && !q.kind ? wordChipsHTML(q, this.wordOpen) : '';
   },
 
   /* Tap a word button → its card opens (tap again → closes). Nothing is read until its 🔊 is tapped. */

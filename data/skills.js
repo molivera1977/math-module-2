@@ -4,10 +4,23 @@
    can rank skills (Focus next / Strongest) and roll them up
    to the standards: 4.NBT.4 (add, subtract, compare),
    4.OA.3 (estimate by rounding), 4.MD.3 (perimeter).
-   P = Practice · A, B = Review A, B · T, U = Test A, B ·
+   W = Warm-Up (its scored questions only) · P = Practice · A, B = Review A, B · T, U = Test A, B ·
    X, Y = the "try one like it" twins of Review A, B.
 ═══════════════════════════════════════════════════════ */
 window.SKILLS = {
+  W07: "Add whole numbers",
+  W08: "Add whole numbers",
+  W17: "Subtract whole numbers",
+  W18: "Subtract whole numbers",
+  W19: "Subtract whole numbers",
+  W23: "Subtract whole numbers",
+  W28: "Comparison problems",
+  W29: "Comparison problems",
+  W34: "Estimate by rounding",
+  W36: "Estimate by rounding",
+  W41: "Perimeter of a rectangle",
+  W42: "Perimeter of a square",
+
   P01: "Add whole numbers",
   P02: "Add whole numbers",
   P03: "Add whole numbers",
