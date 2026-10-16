@@ -1130,7 +1130,15 @@ const app = {
     this.lastMissed    = false;
     this.timerSeconds  = 0;
 
-    const rawBank = [...window['FORM_' + form]];
+    // NEW NUMBERS ON A RETRY (Marcos 10/16: "If a student needs to redo the Warmup, Practice A, Practice B, or Review
+    // can we have different numbers in the questions? I don't want kids passing just because they remember the answers").
+    // FORM_X_V holds the versions (data/form_*.js): try 1 → version 1, try 2 → version 2 … then round again.
+    // "Try" = finished tries on this device. Same ids and kinds of question in every version, so the dashboard still
+    // compares them question by question; the version rides in the start event.
+    const versions = window['FORM_' + form + '_V'];
+    const triesDone = (reviewMode || SHARE_MODE) ? 0 : (getFormAttempts(this.studentName)[form] || 0);
+    this.version = Array.isArray(versions) && versions.length ? triesDone % versions.length : 0;
+    const rawBank = [...(this.version ? versions[this.version] : window['FORM_' + form])];
 
     const shuffleQ = q => {
       if (!q.choices) return { ...q };           // a Warm-Up worked example has no choices
@@ -1151,7 +1159,7 @@ const app = {
     }
 
     this.show('quiz-screen');
-    logEvent('start');
+    logEvent('start', { v: this.version + 1 });
     this.startTimer();
     this.renderQuestion();
   },
@@ -1191,6 +1199,7 @@ const app = {
     this.timerSeconds   = saved.timerSeconds || 0;
     this.events = saved.events || [];
     this.startedAt = saved.startedAt || new Date().toISOString();
+    this.version = saved.version || 0;           // the saved questions are already that version's
     this.twin = null; this.lastMissed = false;   // a twin is a bonus question — it is not carried across a restart
     logEvent('resume');
     this.show('quiz-screen');
@@ -1211,7 +1220,8 @@ const app = {
       missedQuestions: this.missedQuestions,
       timerSeconds:    this.timerSeconds,
       events: this.events,
-      startedAt: this.startedAt
+      startedAt: this.startedAt,
+      version:   this.version || 0
     }));
   },
 
