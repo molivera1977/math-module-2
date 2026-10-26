@@ -391,7 +391,7 @@ function speakHint(btn) {
   activeSpeakBtn = btn;
   btn.textContent = '⏹';
   const u = new SpeechSynthesisUtterance(convertToSpokenText('Hint: ' + q.hint));
-  u.lang = 'en-US'; u.rate = 0.92;
+  u.lang = 'en-US'; u.rate = READ_RATE;
   let hlIdx = 0;
   u.onboundary = e => {
     if (e.name !== 'word') return;
@@ -451,7 +451,7 @@ function speakWordCard(btn) {
   activeSpeakBtn = btn;
   btn.textContent = '⏹';
   const u = new SpeechSynthesisUtterance(convertToSpokenText(spans.map(s => s.textContent).join(' ')));
-  u.lang = 'en-US'; u.rate = 0.92;
+  u.lang = 'en-US'; u.rate = READ_RATE;
   let hlIdx = 0;
   u.onboundary = e => {
     if (e.name !== 'word') return;
@@ -683,7 +683,7 @@ function speakDir(btn) {
   const speechText = spans.map(s => s.textContent).join(' ');
   let hlIdx = 0;
   const u = new SpeechSynthesisUtterance(speechText);
-  u.lang = 'en-US'; u.rate = 0.92;
+  u.lang = 'en-US'; u.rate = READ_RATE;
 
   u.onboundary = e => {
     if (e.name !== 'word') return;
@@ -706,6 +706,7 @@ function speakDir(btn) {
    as words, and each word lights up as it is read. Leaving the screen
    (app.show) cancels the speech. */
 const INTRO_SAY = { '🔊': 'the speaker button', '⏹': 'the stop button', '—': ',' };
+const READ_RATE = 0.82;    // every read-aloud a student taps (Marcos 10/26: "I like the 0.82. It's clear and easy to listen to.")
 const INTRO_RATE = 0.82;   // Marcos 10/6: 0.92 ran ahead of the highlight
 let introToken = 0, introTimer = null;
 let introMsPerChar = null, introMsPerWord = null;   // learned from this device's voice
@@ -1492,7 +1493,7 @@ const app = {
 
         let hlIdx = 0;
         const u = new SpeechSynthesisUtterance(convertToSpokenText(text));
-        u.lang = 'en-US'; u.rate = 0.9;
+        u.lang = 'en-US'; u.rate = READ_RATE;
         u.onboundary = e => {
           if (e.name !== 'word') return;
           btn.querySelectorAll('.wrd.hl').forEach(el => el.classList.remove('hl'));
@@ -1644,7 +1645,7 @@ const app = {
       job.abort = () => finish(false);
       btn.classList.add('playing'); btn.textContent = '🔊 Listening…';
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.9;
+      u.lang = 'en-US'; u.rate = READ_RATE;
       let hlIdx = 0;
       u.onstart = () => {
         job.started = true;
@@ -1741,7 +1742,7 @@ const app = {
       stopActiveSpeech();
       activeSpeakBtn = fbSpeakBtn; fbSpeakBtn.textContent = '⏹';
       const u = new SpeechSynthesisUtterance(spokenFb);
-      u.lang = 'en-US'; u.rate = 0.9;
+      u.lang = 'en-US'; u.rate = READ_RATE;
       let hlIdx = 0;
       u.onboundary = e => {
         if (e.name !== 'word') return;
@@ -1936,7 +1937,7 @@ const app = {
     let hlIdx = 0;
 
     const u = new SpeechSynthesisUtterance(spokenText);
-    u.lang = 'en-US'; u.rate = 0.92;
+    u.lang = 'en-US'; u.rate = READ_RATE;
 
     u.onboundary = e => {
       if (e.name !== 'word') return;
