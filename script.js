@@ -390,14 +390,12 @@ function speakHint(btn) {
   const spans = Array.from(btn.parentElement.querySelectorAll('.wrd'));
   activeSpeakBtn = btn;
   btn.textContent = '⏹';
-  const u = new SpeechSynthesisUtterance(convertToSpokenText('Hint: ' + q.hint));
+  const u = new SpeechSynthesisUtterance(sayWords(spans, 'Hint: ' + q.hint, ('Hint: ' + q.hint).split(/\s+/)));
   u.lang = 'en-US'; u.rate = READ_RATE;
-  let hlIdx = 0;
   u.onboundary = e => {
     if (e.name !== 'word') return;
     spans.forEach(el => el.classList.remove('hl'));
-    if (spans[hlIdx]) spans[hlIdx].classList.add('hl');
-    hlIdx++;
+    lightAt(spans, u.text, e.charIndex);
   };
   u.onend = () => {
     spans.forEach(el => el.classList.remove('hl'));
@@ -450,14 +448,12 @@ function speakWordCard(btn) {
   if (!spans.length) return;
   activeSpeakBtn = btn;
   btn.textContent = '⏹';
-  const u = new SpeechSynthesisUtterance(convertToSpokenText(spans.map(s => s.textContent).join(' ')));
+  const u = new SpeechSynthesisUtterance(sayWords(spans));
   u.lang = 'en-US'; u.rate = READ_RATE;
-  let hlIdx = 0;
   u.onboundary = e => {
     if (e.name !== 'word') return;
     spans.forEach(el => el.classList.remove('hl'));
-    if (spans[hlIdx]) spans[hlIdx].classList.add('hl');
-    hlIdx++;
+    lightAt(spans, u.text, e.charIndex);
   };
   u.onend = () => {
     spans.forEach(el => el.classList.remove('hl'));
@@ -681,15 +677,13 @@ function speakDir(btn) {
   btn.textContent = '⏹';
 
   const speechText = spans.map(s => s.textContent).join(' ');
-  let hlIdx = 0;
   const u = new SpeechSynthesisUtterance(speechText);
   u.lang = 'en-US'; u.rate = READ_RATE;
 
   u.onboundary = e => {
     if (e.name !== 'word') return;
     document.querySelectorAll('.dir-text .wrd.hl').forEach(el => el.classList.remove('hl'));
-    if (spans[hlIdx]) spans[hlIdx].classList.add('hl');
-    hlIdx++;
+    lightAt(spans, u.text, e.charIndex);
   };
   u.onend = () => {
     document.querySelectorAll('.dir-text .wrd.hl').forEach(el => el.classList.remove('hl'));
@@ -802,6 +796,37 @@ function speakReadAloudIntro() {
   sayPiece(0);
 }
 
+/* Light the word the voice is on. The voice says where it is in the text (charIndex); it does NOT signal every
+   word — Samantha in Chrome gave no signal for "example:" after "For" (measured in Marcos's Chrome 10/28) — so
+   moving one word per signal fell further behind with each skipped word ("the highlighting can't keep up").
+   A text made by sayWords has its own list of where each word starts; any other spoken text has one token per
+   span, joined by single spaces. Gives back the lit span. */
+function lightAt(spans, text, charIndex) {
+  const said = SAID_AT.get(spans);
+  let j = 0, start = 0;
+  if (said && said.text === text) said.starts.forEach((st, k) => { if (st <= charIndex) j = k; });
+  else String(text).split(' ').forEach((tok, k) => { if (start <= charIndex) j = k; start += tok.length + 1; });
+  spans.forEach(sp => sp && sp.classList.remove('hl'));
+  if (spans[j]) spans[j].classList.add('hl');
+  return spans[j];
+}
+/* What the voice is told for these spans. The words change on the way to the voice ("3/4" is said "three
+   fourths", "?" is said "question mark", "<" before "less than" is not said), so lightAt cannot count tokens in
+   it: each word starts where the rest of the text, said from that word on, starts. That list is kept for
+   lightAt. raw = the text as written; words = each span's word, as raw has it. */
+const SAID_AT = new WeakMap();
+function sayWords(spans, raw = spans.map(sp => sp.textContent).join(' '), words = spans.map(sp => sp.textContent)) {
+  const text = convertToSpokenText(raw);
+  let from = 0;
+  const starts = words.map(w => {
+    const at = raw.indexOf(w, from);
+    if (at < 0) return NaN;   // not in raw as written: never lit, the rest still line up
+    from = at + w.length;
+    return text.length - convertToSpokenText(' ' + raw.slice(at)).length;
+  });
+  SAID_AT.set(spans, { text, starts });
+  return text;
+}
 function wrapWords(html) {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
@@ -1491,14 +1516,12 @@ const app = {
         activeSpeakBtn = speakBtn;
         speakBtn.textContent = '⏹';
 
-        let hlIdx = 0;
-        const u = new SpeechSynthesisUtterance(convertToSpokenText(text));
+        const u = new SpeechSynthesisUtterance(sayWords(hlSpans, text, text.split(/\s+/).filter(Boolean)));
         u.lang = 'en-US'; u.rate = READ_RATE;
         u.onboundary = e => {
           if (e.name !== 'word') return;
           btn.querySelectorAll('.wrd.hl').forEach(el => el.classList.remove('hl'));
-          if (hlSpans[hlIdx]) hlSpans[hlIdx].classList.add('hl');
-          hlIdx++;
+          lightAt(hlSpans, u.text, e.charIndex);
         };
         u.onend = () => {
           btn.querySelectorAll('.wrd.hl').forEach(el => el.classList.remove('hl'));
@@ -1551,7 +1574,7 @@ const app = {
     // one line per place / idea ("\n" in the data); the voice reads it all in one go
     fb.innerHTML = q.text.split('\n').map((line, i, all) => `<div class="watch-line${i === all.length - 1 ? ' watch-sum' : ''}">${wrapWords(formatMathText(line))}</div>`).join('');
     const spans = Array.from(fb.querySelectorAll('.wrd')).filter(el => /[A-Za-z0-9+=×−]/.test(el.textContent));
-    const spoken = convertToSpokenText(spans.map(el => el.textContent).join(' '));
+    const spoken = sayWords(spans);
     const small = document.createElement('button');
     small.className = 'speak-btn';
     fb.prepend(small);
@@ -1646,7 +1669,6 @@ const app = {
       btn.classList.add('playing'); btn.textContent = '🔊 Listening…';
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US'; u.rate = READ_RATE;
-      let hlIdx = 0;
       u.onstart = () => {
         job.started = true;
         // Some voices never report that they finished. Generous on purpose (about 80 words a minute),
@@ -1656,8 +1678,7 @@ const app = {
       u.onboundary = e => {
         if (e.name !== 'word') return;
         clearHl();
-        if (spans[hlIdx]) spans[hlIdx].classList.add('hl');
-        hlIdx++;
+        lightAt(spans, u.text, e.charIndex);
       };
       u.onend = () => finish(true);
       u.onerror = () => { if (job.settled) return; settle(); noVoice(); };
@@ -1734,7 +1755,7 @@ const app = {
     // Wrap feedback words in spans for word-by-word highlighting (skip emoji-only tokens)
     fb.innerHTML = wrapWords(fb.innerHTML);
     const fbSpans = Array.from(fb.querySelectorAll('.wrd')).filter(s => /[A-Za-z0-9+=×−]/.test(s.textContent))   /* keep + − = × so they are read aloud */;
-    const spokenFb = convertToSpokenText(fbSpans.map(s => {
+    const spokenFb = sayWords(fbSpans, fbSpans.map(s => {
       const gap = s.nextSibling && s.nextSibling.nodeType === 3 && /\u00a0{2,}/.test(s.nextSibling.textContent);
       return s.textContent + (gap ? ',' : '');
     }).join(' '));
@@ -1744,12 +1765,10 @@ const app = {
       activeSpeakBtn = fbSpeakBtn; fbSpeakBtn.textContent = '⏹';
       const u = new SpeechSynthesisUtterance(spokenFb);
       u.lang = 'en-US'; u.rate = READ_RATE;
-      let hlIdx = 0;
       u.onboundary = e => {
         if (e.name !== 'word') return;
         fbSpans.forEach(el => el.classList.remove('hl'));
-        if (fbSpans[hlIdx]) fbSpans[hlIdx].classList.add('hl');
-        hlIdx++;
+        lightAt(fbSpans, u.text, e.charIndex);
       };
       u.onend = () => {
         fbSpans.forEach(el => el.classList.remove('hl'));
@@ -1923,7 +1942,6 @@ const app = {
 
     // the hint box is read aloud after the question (class reads mostly at Level 1)
     // the question only — a hint is read by its own 🔊, and only after the student opens it
-    const spokenText = convertToSpokenText(q.q);
     const qtEl = document.getElementById('question-text');
     const originalWords = q.q.split(/\s+/);
 
@@ -1935,7 +1953,7 @@ const app = {
     qtEl.innerHTML = qHTML;
 
     const hlSpans = originalWords.map((_, i) => document.getElementById('wrd' + i));
-    let hlIdx = 0;
+    const spokenText = sayWords(hlSpans, q.q, originalWords);
 
     const u = new SpeechSynthesisUtterance(spokenText);
     u.lang = 'en-US'; u.rate = READ_RATE;
@@ -1943,8 +1961,7 @@ const app = {
     u.onboundary = e => {
       if (e.name !== 'word') return;
       document.querySelectorAll('#question-text .wrd.hl').forEach(el => el.classList.remove('hl'));
-      if (hlSpans[hlIdx]) hlSpans[hlIdx].classList.add('hl');
-      hlIdx++;
+      lightAt(hlSpans, u.text, e.charIndex);
     };
     u.onend = () => {
       document.querySelectorAll('#question-text .wrd.hl').forEach(el => el.classList.remove('hl'));
