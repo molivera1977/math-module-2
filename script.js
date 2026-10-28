@@ -59,7 +59,7 @@ const TEST_OPEN       = false;   // Step 5 · Test — official (its retake need
 // ANY_ORDER true = no gates at all (every open part can be started).
 const ANY_ORDER     = false;
 const PASS_PCT      = 70;
-const INSTRUCT_SECS = 20;
+const INSTRUCT_SECS = 15;
 const READ_SECS     = 12;
 const NEXT_SECS     = 8;
 // Warm-Up steps are short (one small step of a problem), so their locks are short too
@@ -1305,7 +1305,7 @@ const app = {
     if (el) el.textContent = `${m}:${s}`;
   },
 
-  /* ── INSTRUCTIONS LOCK (20s) ── */
+  /* ── INSTRUCTIONS LOCK (15s) ── */
   startInstructionsTimer() {
     if (this.instructInterval) { clearInterval(this.instructInterval); this.instructInterval = null; }
     const btn   = document.getElementById('ready-btn');
