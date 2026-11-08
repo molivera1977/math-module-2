@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Math Module 2 Review and Test: Add, Subtract, Compare and Perimeter</title>
-  <link rel="stylesheet" href="style.css?v=m2m" />
+  <link rel="stylesheet" href="style.css?v=m2m-teach1" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -28,6 +28,15 @@
       <div style="text-align:right;margin-top:10px;">
         <span onclick="app.promptTeacherReview()" style="font-size:0.75rem;color:#767676;cursor:pointer;user-select:none;">Teacher Access</span>
       </div>
+    </div>
+
+    <!-- 👀 TRY IT AS A STUDENT (Teacher screen): a ?share=…&teach=<PART>.<version> link starts here — one tap starts
+         the part (the tap also lets the device speak) -->
+    <div id="teach-ready" class="teach-ready hidden">
+      <p class="teach-ready-h">🧑‍🏫 Try it as a student</p>
+      <p class="teach-ready-what" id="teach-what"></p>
+      <p class="teach-ready-note">You answer, the way a student does. ⏩ Skip the wait opens anything that is shut. Nothing is saved.</p>
+      <button type="button" class="start-btn" id="teach-start-btn" onclick="app.teachStart()">▶ Start</button>
     </div>
 
     <!-- STUDENT LOGIN (hidden until after directions) -->
@@ -391,10 +400,6 @@
     <div class="signout-row" style="text-align:center;margin-top:14px;">
       <button class="signout-btn" onclick="app.restart()">🚪 Sign Out<span class="signout-sub">Only when you are all done. You will go back to the start.</span></button>
     </div>
-    <div id="review-next-btn" class="hidden" style="text-align:center;margin-top:12px;">
-      <button class="start-btn" style="background:#8e44ad;box-shadow:0 5px 0 #6c3483;" onclick="app._showReviewPicker()">🔍 Review Another Form</button>
-      <button onclick="app.exitReviewMode()" style="display:block;margin:10px auto 0;background:none;border:none;color:#999;font-size:0.8rem;cursor:pointer;font-family:inherit;text-decoration:underline;">Exit Review Mode</button>
-    </div>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -432,6 +437,61 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════
+       TEACHER SCREEN (Marcos 11/8 — Math Module 3's, the Lab's screen of 10/30): Teacher Access asks the PIN in the page, then one screen — a part, a
+       version, then 👀 Try it as a student, ✅ Answer key or 🖥️ Slide Mode. Any part; nothing has to be passed first.
+       Filled in by script.js.
+  ══════════════════════════════════════════ -->
+  <div id="teacher-screen" class="hidden">
+    <div class="t-bar">
+      <span class="t-title">🧑‍🏫 Teacher</span>
+      <span class="t-note">Nothing here is saved or sent.</span>
+      <button type="button" class="t-exit" id="t-exit-btn" onclick="app.exitTeacher()">✕ Exit teacher</button>
+    </div>
+    <h3 class="t-h">Part</h3>
+    <div class="t-row" id="t-parts"></div>
+    <div id="t-version-row">
+      <h3 class="t-h">Version <span class="t-h-note">each one has its own numbers</span></h3>
+      <div class="t-row" id="t-versions"></div>
+    </div>
+    <p class="t-picked" id="t-picked"></p>
+    <div class="t-actions">
+      <button type="button" class="t-act" id="t-try" onclick="app.teacherTry()">👀 Try it as a student<span>You answer, like a student, from the first question to the score. ⏩ Skip the wait opens anything that is shut. Nothing is saved.</span></button>
+      <button type="button" class="t-act" id="t-key" onclick="app.teacherKey()">✅ Answer key<span>Every scored question of this part and version on one page, the right answer marked, and why. You can print it.</span></button>
+      <button type="button" class="t-act" id="t-slides" onclick="app.teacherSlides()">🖥️ Slide Mode<span>The lessons, big, for your desk or the board: the Warm-Up's 7 worked examples, one line at a time. Never a scored question.</span></button>
+    </div>
+  </div>
+
+  <!-- 🖥️ SLIDE MODE (teaching only, Marcos 10/30): the Warm-Up's worked examples (its 👀 Watch items), one line per tap,
+       the worked picture with the last line. Never a scored question. -->
+  <div id="slide-screen" class="hidden">
+    <div class="sl-bar">
+      <span class="sl-title" id="sl-title">🖥️ Slide Mode</span>
+      <span class="sl-count" id="sl-count"></span>
+      <span class="sl-go">
+        <button type="button" class="sl-step" id="sl-prev" aria-label="Back one slide" onclick="app.slideGo(app._slides.at - 1)">◀</button>
+        <select id="sl-jump" aria-label="Jump to a slide" onchange="app.slideGo(Number(this.value)); this.blur();"></select>
+        <button type="button" class="sl-step" id="sl-fwd" aria-label="Forward one slide" onclick="app.slideGo(app._slides.at + 1)">▶</button>
+      </span>
+      <button type="button" class="sl-exit" onclick="app.exitSlides()">✕ Exit</button>
+    </div>
+    <div class="sl-body" id="sl-body"></div>
+    <div class="sl-nav">
+      <button type="button" class="action-btn sl-back" id="sl-back" onclick="app.slideBack()">◀ Back</button>
+      <button type="button" class="action-btn sl-next" id="sl-next" onclick="app.slideNext()">Next ▶</button>
+    </div>
+  </div>
+
+  <!-- ✅ ANSWER KEY (Teacher screen): filled in by script.js (teacherKey) -->
+  <div id="key-screen" class="hidden">
+    <div class="t-bar">
+      <span class="t-title" id="key-title">✅ Answer key</span>
+      <button type="button" class="t-exit" id="key-print-btn" onclick="document.body.classList.add('key-printing'); window.print(); document.body.classList.remove('key-printing');">🖨️ Print</button>
+      <button type="button" class="t-exit" id="key-back-btn" onclick="app.openTeacher()">← Teacher screen</button>
+    </div>
+    <div id="key-body"></div>
+  </div>
+
   <!-- GLOBAL PIN MODAL -->
   <div id="pin-modal" class="hidden">
     <div class="pin-modal-inner">
@@ -452,7 +512,19 @@
 
 </div><!-- /.container -->
 
-<script src="share.js?v=3"></script>
+<!-- 👀 Try it as a student: the teacher's bar (shown only on a ?teach= link) -->
+<div id="teach-bar" class="teach-bar hidden">
+  <span class="teach-bar-what">🧑‍🏫 Trying it as a student · nothing is saved</span>
+  <span class="teach-go">
+    <button type="button" id="teach-prev" aria-label="Back one" onclick="app.teachStep(-1)">◀</button>
+    <select id="teach-jump" aria-label="Go to a question" onchange="app.teachGo(Number(this.value)); this.blur();"></select>
+    <button type="button" id="teach-next" aria-label="Forward one" onclick="app.teachStep(1)">▶</button>
+  </span>
+  <button type="button" id="teach-skip" onclick="app.teacherSkipWait()">⏩ Skip the wait</button>
+  <button type="button" id="teach-back" onclick="app.backToTeacher()">← Teacher screen</button>
+</div>
+
+<script src="share.js?v=4"></script>
 <script src="form-label.js?v=1"></script>
 <script src="next-waits.js?v=1" data-hold='#next-btn, #lc-next'></script>
 <script src="data/form_w.js?v=m2m"></script>
@@ -466,6 +538,6 @@
 <script src="data/words.js?v=m2m"></script>
 <script src="data/skills.js?v=m2m"></script>
 <script src="visuals.js?v=m2m"></script>
-<script src="script.js?v=m2m-fl1-hush1-r82-keys1-follow1-dir15-voice1"></script>
+<script src="script.js?v=m2m-fl1-hush1-r82-keys1-follow1-dir15-voice1-teach1"></script>
 </body>
 </html>

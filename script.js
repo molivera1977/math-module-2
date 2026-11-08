@@ -248,8 +248,22 @@ let unlockedForms   = new Set();
 let retakeUnlocked  = false;   // set by the Teacher PIN; cleared on Home
 let pinModalCallback = null;
 let activeSpeakBtn  = null;
-let reviewMode      = false;
-let reviewAutoRun   = false;
+let reviewMode      = false;   // only the tests set these now: the Teacher screen replaced the Manual / Auto-run
+let reviewAutoRun   = false;   // pop-ups (11/8) — the site no longer answers for the teacher
+
+/* 🧑‍🏫 THE TEACHER SCREEN (Math Module 3's, 11/3 — the Lab's 10/30, Parts of Speech HQ's 10/28; Marcos 11/8: "update math module 2 with the new teacher access mode"): Teacher Access asks the PIN in
+   the page, then ONE screen: a part, a version — any part, nothing passed first. The PIN lasts for this tab
+   (sessionStorage) until ✕ Exit teacher. 👀 Try it as a student opens the guest view (share.js: nothing reaches the
+   sheet) on ?teach=<PART>.<version>, started the way a first try starts. */
+const TEACHER_KEY      = 'mm2_teacher';        // sessionStorage: '1' = the Teacher PIN was given in this tab
+const TEACHER_PICK_KEY = 'mm2_teacher_pick';   // sessionStorage: the last part and version picked
+const TEACH_PARTS      = ['W', 'P', 'A', 'B', 'T', 'U'];
+const versionCount = id => { const v = window['FORM_' + id + '_V']; return Array.isArray(v) && v.length ? v.length : 1; };
+const TEACH = (() => {
+  const m = /^([WPABTU])\.(\d+)$/.exec(new URLSearchParams(location.search).get('teach') || '');
+  return SHARE_MODE && m ? { form: m[1], version: Number(m[2]) } : null;
+})();
+function teacherUnlocked() { try { return sessionStorage.getItem(TEACHER_KEY) === '1'; } catch (e) { return false; } }
 
 /* ── MATH HELPERS ───────────────────────────────────── */
 function frac(n, d) {
@@ -929,7 +943,7 @@ const app = {
 
   /* ── screens ── */
   show(id) {
-    ['start-screen','readaloud-screen','directions-screen','quiz-screen','end-screen','scoreboard-screen']
+    ['start-screen','readaloud-screen','directions-screen','quiz-screen','end-screen','scoreboard-screen','teacher-screen','key-screen','slide-screen']
       .forEach(s => document.getElementById(s).classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     syncFormLabel(id);
@@ -1115,25 +1129,244 @@ const app = {
     this.startSession('U');            // the retake: same skills, new numbers
   },
 
-  /* ── TEACHER REVIEW MODE ── */
+  /* ── 🧑‍🏫 THE TEACHER SCREEN (see TEACHER_KEY) ── */
   promptTeacherReview() {
-    const pin = prompt('Enter Teacher PIN to access Review Mode:');
-    if (pin !== '9377') { if (pin !== null) alert('Incorrect PIN.'); return; }
-    this.studentName = 'Mr. O (Teacher)';
-    reviewMode = true;
-    localStorage.removeItem(STORAGE_KEY);
-    this._showReviewPicker();
+    if (teacherUnlocked()) { this.openTeacher(); return; }
+    this.showPinModal('🧑‍🏫 Teacher', 'Enter the Teacher PIN.', () => {
+      try { sessionStorage.setItem(TEACHER_KEY, '1'); } catch (e) {}
+      this.openTeacher();
+    });
   },
 
-  _showReviewPicker() {
-    const form = prompt('Choose a part to look at:\n0 — Warm-Up\n1 — Practice A\n2 — Practice B\n3 — Review\n4 — Test\n5 — Test (retake)\n\nEnter 0, 1, 2, 3, 4 or 5:');
-    const map = { '0': 'W', '1': 'P', '2': 'A', '3': 'B', '4': 'T', '5': 'U' };
-    if (!map[form]) { alert('Invalid choice.'); reviewMode = false; return; }
-    const mode = prompt('Choose review mode:\n1 — Manual (tap Next each question)\n2 — Auto-run (fully automatic)\n\nEnter 1 or 2:');
-    if (mode !== '1' && mode !== '2') { alert('Invalid choice.'); reviewMode = false; return; }
-    reviewAutoRun = (mode === '2');
-    this.startSession(map[form]);
+  _teacherPick() {
+    let p = null;
+    try { p = JSON.parse(sessionStorage.getItem(TEACHER_PICK_KEY) || 'null'); } catch (e) {}
+    const form = p && TEACH_PARTS.includes(p.form) ? p.form : 'W';   // the Warm-Up first
+    const version = p && p.version >= 1 && p.version <= versionCount(form) ? p.version : 1;
+    return { form, version };
   },
+
+  openTeacher() {
+    stopActiveSpeech();
+    this._renderTeacher(this._teacherPick());
+    this.show('teacher-screen');
+  },
+
+  /* A part, a version: one row of buttons each; the picked one is filled in. A new part keeps the version when it has
+     one that high (the Test and the Retake have one). */
+  teacherPick(change) {
+    const t = Object.assign(this._teacherPick(), change);
+    if (!(t.version >= 1 && t.version <= versionCount(t.form))) t.version = 1;
+    this._renderTeacher(t);
+  },
+
+  _renderTeacher(t) {
+    try { sessionStorage.setItem(TEACHER_PICK_KEY, JSON.stringify(t)); } catch (e) {}
+    const btn = (on, label, change, id) =>
+      `<button type="button" class="t-pick${on ? ' on' : ''}" data-id="${id}" aria-pressed="${on}" onclick='app.teacherPick(${JSON.stringify(change)})'>${label}</button>`;
+    document.getElementById('t-parts').innerHTML = TEACH_PARTS
+      .map(f => btn(f === t.form, `${formOpen(f) ? '' : '🔒 '}${FORM_NAMES[f]}`, { form: f }, f)).join('');
+    const count = versionCount(t.form);
+    document.getElementById('t-version-row').classList.toggle('hidden', count < 2);
+    document.getElementById('t-versions').innerHTML = Array.from({ length: count }, (_, i) => i + 1)
+      .map(v => btn(v === t.version, `Version ${v}`, { version: v }, v)).join('');
+    document.getElementById('t-picked').textContent =
+      `${this._teachLabel(t.form, t.version)} · ${formOpen(t.form) ? 'open to students' : '🔒 closed to students'}`;
+  },
+
+  _teachLabel(form, version) {
+    return `${FORM_NAMES[form]}${versionCount(form) > 1 ? ' · Version ' + version : ''}`;
+  },
+
+  _teachBank(t) {
+    const V = window['FORM_' + t.form + '_V'];
+    return t.version > 1 && Array.isArray(V) && V[t.version - 1] ? V[t.version - 1] : window['FORM_' + t.form];
+  },
+
+  /* 👀 Try it as a student: the guest view, started on this part and version */
+  teacherTry() {
+    const t = this._teacherPick();
+    location.href = `${location.pathname}${window.SHARE_LINK}&teach=${t.form}.${t.version}`;
+  },
+
+  /* 🖥️ SLIDE MODE (Marcos 10/30: "This would be good if a kid has a question and i can call them up to my desk or the
+     board to answer a question and have the actual lesson to refer to"): the TEACHING only — the Warm-Up's worked
+     examples (FORM_W, its 👀 Watch items: the lesson a student hears before the steps), one line per tap, the worked
+     picture with the last line. Never a scored question. Nothing is saved or sent. */
+  teacherSlides() {
+    const list = (window.FORM_W || []).filter(q => q.kind === 'watch')
+      .map(q => ({ id: q.id, title: q.title, steps: q.text.split('\n'), setup: null, pic: q.pic }));
+    if (!list.length) return;
+    this._slides = { list, at: 0, step: 0 };
+    this.show('slide-screen');
+    document.body.classList.add('slides-active');
+    const jump = document.getElementById('sl-jump');
+    jump.innerHTML = '';
+    list.forEach((sl, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = `${i + 1}. ${sl.title}`; jump.appendChild(o); });
+    this._renderSlide();
+  },
+
+  _renderSlide() {
+    const S = this._slides, sl = S.list[S.at];
+    stopActiveSpeech();
+    const done = S.step >= sl.steps.length;
+    const pic = done ? sl.pic : sl.setup;
+    document.getElementById('sl-count').textContent = `Slide ${S.at + 1} of ${S.list.length}`;
+    document.getElementById('sl-jump').value = String(S.at);
+    document.getElementById('sl-body').innerHTML =
+      `<p class="sl-where">👀 Worked example ${S.at + 1} of ${S.list.length}</p><h2 class="sl-h">${formatMathText(sl.title)}</h2>` +
+      (pic ? `<div class="sl-pic">${M2V.explainHTML(pic)}</div>` : '') +
+      `<ol class="sl-steps">${sl.steps.slice(0, S.step).map((l, i) =>
+        `<li class="sl-line${i === S.step - 1 ? ' sl-new' : ''}${done && i === sl.steps.length - 1 ? ' sl-ans' : ''}">${formatMathText(l)}</li>`).join('')}</ol>`;
+    const last = S.at + 1 >= S.list.length;
+    const next = document.getElementById('sl-next');
+    next.disabled = done && last;
+    next.textContent = !done ? (S.step === 0 ? '🪜 First step' : S.step === sl.steps.length - 1 ? '✅ Last step' : '🪜 Next step') : last ? '🏁 Last slide' : 'Next slide ▶';
+    document.getElementById('sl-back').disabled = S.at === 0 && S.step === 0;
+    document.getElementById('sl-prev').disabled = S.at === 0;
+    document.getElementById('sl-fwd').disabled = last;
+    const newest = document.querySelector('#sl-body .sl-new');
+    if (newest) newest.scrollIntoView({ block: 'nearest' }); else window.scrollTo(0, 0);
+  },
+
+  slideNext() {
+    const S = this._slides;
+    if (!S) return;
+    if (S.step < S.list[S.at].steps.length) { S.step += 1; this._renderSlide(); return; }
+    if (S.at + 1 >= S.list.length) return;
+    S.at += 1; S.step = 0;
+    this._renderSlide();
+  },
+
+  /* Back takes away the last step; at a slide's start it goes to the slide before, all its steps shown */
+  slideBack() {
+    const S = this._slides;
+    if (!S) return;
+    if (S.step > 0) { S.step -= 1; this._renderSlide(); return; }
+    if (S.at === 0) return;
+    S.at -= 1; S.step = S.list[S.at].steps.length;
+    this._renderSlide();
+  },
+
+  slideGo(i) {
+    const S = this._slides;
+    if (!S || !(i >= 0 && i < S.list.length)) return;
+    S.at = i; S.step = 0;
+    this._renderSlide();
+  },
+
+  exitSlides() {
+    stopActiveSpeech();
+    this._slides = null;
+    document.getElementById('sl-body').innerHTML = '';
+    document.body.classList.remove('slides-active');
+    this.openTeacher();
+  },
+
+  /* ✅ Answer key: every scored question of the picked part and version, in the data's order, the picture, the right
+     choice ✅, and why with the worked picture. A child sees the choices shuffled (shuffleQ), so the key has no letters. */
+  teacherKey() {
+    const t = this._teacherPick();
+    const qs = this._teachBank(t).filter(isScored);
+    const why = q => q.explanation || q.explain
+      ? `<div class="key-why">${q.explanation ? `<b>Why:</b> ${formatMathText(q.explanation)}` : ''}${q.explain ? M2V.explainHTML(q.explain) : ''}</div>` : '';
+    // the paper's own title (Marcos 11/4: "every print version should have a title"): Print hides the bar above,
+    // so the printout says which part and version it is
+    const html = [`<div class="key-print-head"><h1>Math Module 2 Answer Key — ${this._teachLabel(t.form, t.version)}</h1>` +
+      `<p>Add, Subtract, Compare and Perimeter · Mr. O's 4th Grade · ${qs.length} questions, all multiple choice</p></div>`,
+      `<p class="key-note">Each child sees the choices in a shuffled order, so there are no letters here. The right answer has a ✅.</p>`];
+    qs.forEach((q, i) => {
+      const pic = q.pic && !q.explain ? `<div class="key-pic">${M2V.picHTML(q.pic)}</div>` : '';   // the worked picture under Why shows the same model
+      const choices = `<ul class="key-choices">${q.choices.map(c =>
+        `<li class="${c === q.answer ? 'key-right' : ''}">${formatMathText(c)}${c === q.answer ? ' ✅' : ''}</li>`).join('')}</ul>`;
+      const skill = (window.SKILLS || {})[q.id] ? ` · ${window.SKILLS[q.id]}` : '';
+      html.push(`<div class="key-q"><p class="key-where">Question ${i + 1}${skill}</p><p class="key-ask">${formatMathText(q.q)}</p>${pic}${choices}${why(q)}</div>`);
+    });
+    document.getElementById('key-title').textContent = `✅ Answer key · ${this._teachLabel(t.form, t.version)}`;
+    document.getElementById('key-body').innerHTML = html.join('');
+    this.show('key-screen');
+    window.scrollTo(0, 0);
+  },
+
+  backToTeacher() {
+    stopActiveSpeech();
+    if (TEACH) { location.href = `${location.pathname}#teacher`; return; }
+    this.openTeacher();
+  },
+
+  exitTeacher() {
+    try { sessionStorage.removeItem(TEACHER_KEY); } catch (e) {}
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    this.exitReviewMode();
+  },
+
+  /* A Try-it link: signed in as the guest, one tap to start (the tap also lets the device speak) */
+  _teachReady() {
+    const t = TEACH;
+    if (!(t.version >= 1 && t.version <= versionCount(t.form))) return;
+    this._shareSignIn();
+    document.getElementById('student-login-panel').classList.add('hidden');
+    document.getElementById('welcome-panel').classList.add('hidden');
+    document.getElementById('teach-bar').classList.remove('hidden');
+    document.body.classList.add('teach-on');
+    document.getElementById('teach-what').textContent = this._teachLabel(t.form, t.version);
+    document.getElementById('teach-ready').classList.remove('hidden');
+  },
+
+  teachStart() {
+    document.getElementById('teach-ready').classList.add('hidden');
+    this._teachVersion = TEACH.version;
+    this.startSession(TEACH.form);
+  },
+
+  /* ⏩ Skip the wait: opens what a student is waiting on right now — the read time before the choices, the Listen on a
+     worked example or after a miss, the pause before Next, the score screen's lock. Each opens the way waiting it out or
+     hearing it to the end does. */
+  teacherSkipWait() {
+    stopActiveSpeech();
+    if (typeof this._readOpen === 'function') this._readOpen();
+    if (typeof this._gateOpen === 'function') this._gateOpen();
+    if (this.nextInterval) {
+      clearInterval(this.nextInterval);
+      this.nextInterval = null;
+      document.getElementById('next-timer-bar').classList.add('hidden');
+      this.soakDone = true;
+    }
+    if (this.questionLocked && !document.getElementById('quiz-screen').classList.contains('hidden')) this._maybeShowNext();
+    if (typeof this._scoreUnlock === 'function') this._scoreUnlock();
+  },
+
+  /* Go anywhere in the run (◀ menu ▶). A question skipped is not scored. */
+  _teachList() {
+    const tag = q => q.kind === 'watch' ? '👀 Watch' : q.kind === 'step' ? '🪜 Step' : '✏️ Question';
+    return (this.currentBank || []).map((q, i) => ({ i, label: `${i + 1}. ${tag(q)}${q.title ? ': ' + q.title : ''}` }));
+  },
+
+  _teachSync() {
+    const list = this._teachList();
+    const jump = document.getElementById('teach-jump');
+    document.getElementById('teach-bar').classList.add('started');
+    if (jump.options.length !== list.length) {
+      jump.innerHTML = '';
+      list.forEach((it, k) => { const o = document.createElement('option'); o.value = String(k); o.textContent = it.label; jump.appendChild(o); });
+    }
+    jump.value = String(this.currentIndex);
+    document.getElementById('teach-prev').disabled = this.currentIndex <= 0;
+    document.getElementById('teach-next').disabled = this.currentIndex >= list.length - 1;
+  },
+
+  teachGo(k) {
+    if (!(k >= 0 && k < (this.currentBank || []).length)) return;
+    stopActiveSpeech();
+    if (this.nextInterval) { clearInterval(this.nextInterval); this.nextInterval = null; }
+    if (this.readInterval) { clearInterval(this.readInterval); this.readInterval = null; }
+    if (document.getElementById('quiz-screen').classList.contains('hidden')) this.show('quiz-screen');
+    this.twin = null;
+    this.currentIndex = k;
+    this.renderQuestion();
+  },
+
+  teachStep(d) { this.teachGo(this.currentIndex + d); },
 
   exitReviewMode() {
     reviewMode    = false;
@@ -1201,6 +1434,7 @@ const app = {
     const versions = window['FORM_' + form + '_V'];
     const triesDone = (reviewMode || SHARE_MODE) ? 0 : (getFormAttempts(this.studentName)[form] || 0);
     this.version = Array.isArray(versions) && versions.length ? triesDone % versions.length : 0;
+    if (this._teachVersion) { this.version = Math.min(this._teachVersion, versionCount(form)) - 1; this._teachVersion = null; }   // 👀 Try it
     const rawBank = [...(this.version ? versions[this.version] : window['FORM_' + form])];
 
     const shuffleQ = q => {
@@ -1397,20 +1631,23 @@ const app = {
     });
 
     let remaining = secs;
+    const open = () => {
+      clearInterval(this.readInterval);
+      this.readInterval = null;
+      this._readOpen = null;
+      bar.classList.add('hidden');
+      document.querySelectorAll('.answer-btn').forEach(b => {
+        b.classList.remove('locked-choice');
+        b.disabled = false;
+      });
+      document.getElementById('confirm-btn').classList.remove('hidden');
+    };
     this.readInterval = setInterval(() => {
       remaining--;
       count.textContent = remaining;
-      if (remaining <= 0) {
-        clearInterval(this.readInterval);
-        this.readInterval = null;
-        bar.classList.add('hidden');
-        document.querySelectorAll('.answer-btn').forEach(b => {
-          b.classList.remove('locked-choice');
-          b.disabled = false;
-        });
-        document.getElementById('confirm-btn').classList.remove('hidden');
-      }
+      if (remaining <= 0) open();
     }, 1000);
+    this._readOpen = open;   // 🧑‍🏫 ⏩ Skip the wait
   },
 
   /* ── NEXT SOAK TIMER (8s) ── */
@@ -1458,6 +1695,8 @@ const app = {
 
   /* ── RENDER QUESTION ── */
   renderQuestion() {
+    if (TEACH) this._teachSync();   // 👀 Try it as a student: the bar's menu follows the run
+    this._readOpen = null; this._gateOpen = null;
     setPartBanner(this.currentForm);
     const q     = this.currentQ();
     const total = this.currentBank.length;
@@ -1648,6 +1887,7 @@ const app = {
 
     const heard = how => {
       if (!this.mustHear || !btn.isConnected) return;
+      this._gateOpen = null;
       this.mustHear = false;
       logEvent('heard', { id: qid, how });      // how: 'voice' or 'read' (no sound on the device)
       if (onHeard) onHeard();
@@ -1709,6 +1949,7 @@ const app = {
       window.speechSynthesis.speak(u);
     };
     btn.onclick = play;
+    this._gateOpen = () => { if (this.mustHear && btn.isConnected) heard('skip'); };   // 🧑‍🏫 ⏩ Skip the wait
   },
 
   /* ── CONFIRM ANSWER ── */
@@ -2082,16 +2323,14 @@ const app = {
     count.textContent = secs;
     buttons.forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
     let remaining = secs;
+    const open = () => { clearInterval(iv); bar.classList.add('hidden'); buttons.forEach(b => { b.disabled = false; b.style.opacity = '1'; }); this._scoreUnlock = null; };
     const iv = setInterval(() => {
       remaining--;
       count.textContent = remaining;
       fill.style.width = (remaining / secs * 100) + '%';
-      if (remaining <= 0) {
-        clearInterval(iv);
-        bar.classList.add('hidden');
-        buttons.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
-      }
+      if (remaining <= 0) open();
     }, 1000);
+    this._scoreUnlock = open;   // 🧑‍🏫 ⏩ Skip the wait
   },
 
   clearScores() {
@@ -2326,7 +2565,19 @@ function stopConfetti() {
 }
 
 /* ── BOOT ────────────────────────────────────────────── */
+/* 🖥️ Slide Mode: the arrow keys and a clicker's Page Down / Page Up (Space too, unless a button has the keyboard) */
+document.addEventListener('keydown', e => {
+  if (!app._slides || document.getElementById('slide-screen').classList.contains('hidden')) return;
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+  const k = e.key;
+  if (k === 'ArrowRight' || k === 'PageDown' || (k === ' ' && tag !== 'BUTTON')) { e.preventDefault(); app.slideNext(); }
+  else if (k === 'ArrowLeft' || k === 'PageUp') { e.preventDefault(); app.slideBack(); }
+});
+
 app.init();
+if (TEACH) app._teachReady();
+else if (location.hash === '#teacher' && teacherUnlocked()) app.openTeacher();
 
 /* ── CLOSED-TO-STUDENTS LOCK ────────────────────────── */
 (function applyReviewLock() {
